@@ -452,7 +452,7 @@ export default function App() {
           disabled={uploading}
         >
           <Upload size={16} />
-          {uploading ? "Subiendo…" : "Cargar archivo"}
+          {uploading ? "Uploading…" : "Upload file"}
         </button>
         <input
           ref={fileInput}
@@ -468,7 +468,7 @@ export default function App() {
       {error && (
         <div className="alert" role="alert">
           <span>{error}</span>
-          <button aria-label="Cerrar error" onClick={() => setError("")}>
+          <button aria-label="Dismiss error" onClick={() => setError("")}>
             <X size={16} />
           </button>
         </div>
@@ -476,10 +476,10 @@ export default function App() {
       <main className="editor-grid">
         <section className="workspace panel">
           <div className="panel-bar">
-            <div className="panel-label">Archivo</div>
+            <div className="panel-label">File</div>
             {selected && (
               <select
-                aria-label="Archivo actual"
+                aria-label="Current file"
                 value={draft.mediaId}
                 onChange={(e) => {
                   const m = media.find((m) => m.id === e.target.value);
@@ -506,13 +506,13 @@ export default function App() {
               <div className="upload-symbol">
                 <Upload size={24} />
               </div>
-              <h2>Carga un audio o video</h2>
-              <p>Arrastra un archivo aquí.</p>
+              <h2>Load audio or video</h2>
+              <p>Drop a file here.</p>
               <button
                 className="button primary"
                 onClick={() => fileInput.current?.click()}
               >
-                Elegir archivo <ArrowUpRight size={16} />
+                Choose file <ArrowUpRight size={16} />
               </button>
               <button
                 className="text-button"
@@ -524,7 +524,7 @@ export default function App() {
                   })
                 }
               >
-                Usar video de ejemplo
+                Use sample video
               </button>
               <span className="format-hint">
                 WAV · MP3 · FLAC · MP4 · MOV · WEBM
@@ -534,12 +534,12 @@ export default function App() {
             <>
               <div className="crop-bar">
                 <span>
-                  <SlidersHorizontal size={14} /> Fragmento · máx. 30 s
+                  <SlidersHorizontal size={14} /> Clip · max. 30 s
                 </span>
                 <label>
-                  Desde{" "}
+                  From{" "}
                   <input
-                    aria-label="Inicio del fragmento"
+                    aria-label="Clip start"
                     type="number"
                     min={0}
                     step={0.1}
@@ -549,9 +549,9 @@ export default function App() {
                   <small>s</small>
                 </label>
                 <label>
-                  Hasta{" "}
+                  To{" "}
                   <input
-                    aria-label="Fin del fragmento"
+                    aria-label="Clip end"
                     type="number"
                     min={0.04}
                     max={selected.duration}
@@ -566,12 +566,12 @@ export default function App() {
                   disabled={!!busy || selected.status !== "ready"}
                   onClick={prepare}
                 >
-                  {clip ? "Actualizar" : "Preparar clip"}
+                  {clip ? "Update" : "Prepare clip"}
                 </button>
               </div>
               <div
                 className="source-overview"
-                title="Duración total del archivo"
+                title="Total file duration"
               >
                 {(selected.peaks || [])
                   .filter(
@@ -597,7 +597,7 @@ export default function App() {
               </div>
               <div className="source-duration">
                 <span>0:00</span>
-                <span>Archivo completo · {time(selected.duration || 0)}</span>
+                <span>Full file · {time(selected.duration || 0)}</span>
               </div>
               <div className={"viewer " + (selected.video ? "" : "audio-only")}>
                 {videoUrl ? (
@@ -625,7 +625,7 @@ export default function App() {
                       <img
                         className="mask-overlay"
                         src={activeMask}
-                        alt="Máscara del objeto seleccionado"
+                        alt="Selected object mask"
                       />
                     )}
                     {currentPoints.map((p, i) => (
@@ -644,8 +644,8 @@ export default function App() {
                     </span>
                     {pointLabel !== null && (
                       <span className="click-tip">
-                        Clic para {pointLabel ? "incluir" : "excluir"} ·
-                        fotograma {frame}
+                        Click to {pointLabel ? "include" : "exclude"} ·
+                        frame {frame}
                       </span>
                     )}
                   </div>
@@ -654,14 +654,14 @@ export default function App() {
                     <AudioLines size={64} strokeWidth={1} />
                     <p>
                       {selected.status === "importing"
-                        ? "Analizando archivo…"
+                        ? "Analyzing file…"
                         : ["error", "cancelled", "interrupted"].includes(
                               selected.status,
                             )
                           ? selected.error
                           : clip
-                            ? "Audio listo"
-                            : "Prepara el fragmento."}
+                            ? "Audio ready"
+                            : "Prepare the clip."}
                     </p>
                   </div>
                 )}
@@ -671,7 +671,7 @@ export default function App() {
                   <div className="transport">
                     <button
                       className="play-button"
-                      aria-label={playing ? "Pausar" : "Reproducir"}
+                      aria-label={playing ? "Pause" : "Play"}
                       onClick={play}
                     >
                       {playing ? (
@@ -686,7 +686,7 @@ export default function App() {
                     </span>
                     <div
                       className="track-switch"
-                      aria-label="Pista de reproducción"
+                      aria-label="Playback track"
                     >
                       {(["original", "target", "residual"] as const).map(
                         (t) => (
@@ -704,7 +704,7 @@ export default function App() {
                             {t === "original"
                               ? "Original"
                               : t === "target"
-                                ? "Aislado"
+                                ? "Isolated"
                                 : "Residual"}
                           </button>
                         ),
@@ -713,10 +713,10 @@ export default function App() {
                     <Volume2 size={16} className="volume-icon" />
                   </div>
                   <div className="timeline-toolbar">
-                    <span>Regiones</span>
+                    <span>Regions</span>
                     <div>
                       <button
-                        aria-label="Mover cursor"
+                        aria-label="Move cursor"
                         className={tool === null ? "selected" : ""}
                         onClick={() => setTool(null)}
                       >
@@ -726,13 +726,13 @@ export default function App() {
                         className={tool === "+" ? "selected positive-text" : ""}
                         onClick={() => setTool(tool === "+" ? null : "+")}
                       >
-                        <Plus size={14} /> Presente
+                        <Plus size={14} /> Present
                       </button>
                       <button
                         className={tool === "-" ? "selected negative-text" : ""}
                         onClick={() => setTool(tool === "-" ? null : "-")}
                       >
-                        <Minus size={14} /> Ausente
+                        <Minus size={14} /> Absent
                       </button>
                     </div>
                   </div>
@@ -750,8 +750,8 @@ export default function App() {
                   />
                   <p className="timeline-help">
                     {tool
-                      ? "Arrastra para marcar una región."
-                      : "Las regiones guían la separación; no recortan el clip."}
+                      ? "Drag to mark a region."
+                      : "Regions guide separation; they do not trim the clip."}
                   </p>
                   {!!draft.regions.length && (
                     <div className="region-list">
@@ -766,7 +766,7 @@ export default function App() {
                           {r.sign} {time(r.start - draft.start)}–
                           {time(r.end - draft.start)}
                           <button
-                            aria-label="Eliminar región"
+                            aria-label="Delete region"
                             onClick={() =>
                               edit({
                                 regions: draft.regions.filter(
@@ -788,7 +788,7 @@ export default function App() {
         </section>
         <aside className="controls panel">
           <div className="panel-bar">
-            <div className="panel-label">Separación</div>
+            <div className="panel-label">Separation</div>
             <SlidersHorizontal size={16} />
           </div>
           <div className="controls-body">
@@ -797,25 +797,25 @@ export default function App() {
                 className={tab === "text" ? "active" : ""}
                 onClick={() => setTab("text")}
               >
-                <AudioLines size={15} /> Texto
+                <AudioLines size={15} /> Text
               </button>
               <button
                 className={tab === "visual" ? "active" : ""}
                 onClick={() => setTab("visual")}
               >
-                <Scan size={15} /> Objeto de video
+                <Scan size={15} /> Video object
               </button>
             </div>
             {tab === "text" ? (
               <div className="prompt-section">
                 <label className="field-label" htmlFor="prompt">
-                  Sonido a aislar
+                  Sound to isolate
                 </label>
                 <textarea
                   id="prompt"
                   value={draft.prompt}
                   onChange={(e) => edit({ prompt: e.target.value })}
-                  placeholder="Ej. man speaking"
+                  placeholder="e.g. man speaking"
                   rows={4}
                 />
                 <div className="suggestions">
@@ -830,7 +830,7 @@ export default function App() {
             ) : (
               <div className="visual-controls">
                 <label className="field-label" htmlFor="visual-prompt">
-                  Objeto a aislar
+                  Object to isolate
                 </label>
                 <input
                   id="visual-prompt"
@@ -848,7 +848,7 @@ export default function App() {
                   }
                   onClick={detect}
                 >
-                  <Scan size={15} /> Buscar objeto
+                  <Scan size={15} /> Find object
                 </button>
                 <div className="point-controls">
                   <button
@@ -856,17 +856,17 @@ export default function App() {
                     className={pointLabel === 1 ? "selected" : ""}
                     onClick={() => setPointLabel(pointLabel === 1 ? null : 1)}
                   >
-                    <Plus size={14} /> Incluir
+                    <Plus size={14} /> Include
                   </button>
                   <button
                     disabled={!clip || !selected?.video}
                     className={pointLabel === 0 ? "selected" : ""}
                     onClick={() => setPointLabel(pointLabel === 0 ? null : 0)}
                   >
-                    <Minus size={14} /> Excluir
+                    <Minus size={14} /> Exclude
                   </button>
                   <button
-                    title="Limpiar selección"
+                    title="Clear selection"
                     onClick={() => {
                       edit({ annotations: [], trackingId: null });
                       setDetectionId(null);
@@ -876,21 +876,21 @@ export default function App() {
                   </button>
                 </div>
                 <p className="field-hint">
-                  Pausa el video para añadir o corregir clics.
+                  Pause the video to add or refine clicks.
                 </p>
                 <div className="frame-nav">
                   <button
-                    aria-label="Fotograma anterior"
+                    aria-label="Previous frame"
                     disabled={!clip}
                     onClick={() => seek(Math.max(0, (frame - 1) / 25))}
                   >
                     <ArrowLeft size={13} />
                   </button>
                   <span>
-                    Fotograma {frame} · {time(current)}
+                    Frame {frame} · {time(current)}
                   </span>
                   <button
-                    aria-label="Fotograma siguiente"
+                    aria-label="Next frame"
                     disabled={!clip}
                     onClick={() =>
                       seek(
@@ -909,7 +909,7 @@ export default function App() {
                     {detection.result.count ? (
                       <>
                         <label>
-                          Objeto{" "}
+                          Object{" "}
                           <select
                             value={candidate}
                             onChange={(e) => {
@@ -935,13 +935,12 @@ export default function App() {
                           className="button small secondary"
                           onClick={selectCandidate}
                         >
-                          <Check size={13} /> Elegir
+                          <Check size={13} /> Select
                         </button>
                       </>
                     ) : (
                       <p>
-                        No se encontraron objetos. Prueba otra descripción o usa
-                        clics.
+                        No objects found. Try another description or use clicks.
                       </p>
                     )}
                   </div>
@@ -953,29 +952,29 @@ export default function App() {
                 >
                   <Scan size={15} />
                   {tracking?.status === "done"
-                    ? "Repetir seguimiento"
-                    : "Seguir objeto en el clip"}
+                    ? "Repeat tracking"
+                    : "Track object in clip"}
                 </button>
                 <p className="tracking-status">
                   {tracking?.status === "done"
-                    ? `${tracking.result.visible_frames}/${tracking.result.count} fotogramas con objeto · ${tracking.result.device.toUpperCase()}`
-                    : `${draft.annotations.length} fotogramas anotados`}
+                    ? `${tracking.result.visible_frames}/${tracking.result.count} frames with object · ${tracking.result.device.toUpperCase()}`
+                    : `${draft.annotations.length} annotated frames`}
                 </p>
                 {tracking?.status === "done" && (
                   <button
                     className="text-button"
                     onClick={() => edit({ trackingId: null, annotations: [] })}
                   >
-                    Quitar guía visual
+                    Remove visual guide
                   </button>
                 )}
               </div>
             )}
             <div className="model-section">
-              <div className="field-label">Modelo</div>
+              <div className="field-label">Model</div>
               <div className="model-select">
                 <select
-                  aria-label="Modelo SAM Audio"
+                  aria-label="SAM Audio model"
                   value={draft.model}
                   onChange={(e) =>
                     edit({ model: e.target.value as Recipe["model"] })
@@ -985,8 +984,8 @@ export default function App() {
                     <option key={m} value={m}>
                       {m[0].toUpperCase() + m.slice(1)}
                       {models.find((x) => x.id === m)?.cached
-                        ? " · descargado"
-                        : " · descarga inicial"}
+                        ? " · downloaded"
+                        : " · download on first use"}
                     </option>
                   ))}
                 </select>
@@ -1011,14 +1010,13 @@ export default function App() {
               ) : (
                 <AudioLines size={18} />
               )}{" "}
-              Separar sonido
+              Separate sound
             </button>
             {!busy &&
               draft.annotations.length > 0 &&
               tracking?.status !== "done" && (
                 <p className="field-hint">
-                  Completa el seguimiento o limpia la selección visual antes de
-                  separar.
+                  Complete tracking or clear the visual selection before separating.
                 </p>
               )}
             {busy ? (
@@ -1030,7 +1028,7 @@ export default function App() {
                       execute(() => api(`/jobs/${busy.id}/cancel`, {}))
                     }
                   >
-                    Cancelar
+                    Cancel
                   </button>
                 </div>
                 <div
@@ -1066,27 +1064,27 @@ export default function App() {
               <Check size={18} />
             </span>
             <div>
-              <h3>Resultado</h3>
+              <h3>Result</h3>
               <p>
                 {result.model.toUpperCase()} · {result.device.toUpperCase()} ·{" "}
-                {result.duration.toFixed(2)} s de audio
+                {result.duration.toFixed(2)} s of audio
               </p>
             </div>
             <a className="text-button" href={fileUrl(result.metadata, true)}>
-              Metadatos <Download size={13} />
+              Metadata <Download size={13} />
             </a>
           </div>
           <details className="run-details">
             <summary>
-              <Clock3 size={14} /> Tiempos y detalles <ChevronDown size={14} />
+              <Clock3 size={14} /> Timings and details <ChevronDown size={14} />
             </summary>
             <div className="metrics">
               {[
-                ["Inferencia", result.timings.separate],
-                ["Carga del modelo", result.timings.load],
-                ["Descarga / caché", result.timings.download],
-                ["Procesamiento visual", result.timings.visual],
-                ["Tiempo total", result.timings.total],
+                ["Inference", result.timings.separate],
+                ["Model loading", result.timings.load],
+                ["Download / cache", result.timings.download],
+                ["Visual processing", result.timings.visual],
+                ["Total time", result.timings.total],
               ].map(([label, value]) => (
                 <div key={String(label)}>
                   <span>{label}</span>
@@ -1094,20 +1092,20 @@ export default function App() {
                 </div>
               ))}
               <div>
-                <span>Tiempo real</span>
+                <span>Real-time factor</span>
                 <strong>{result.rtf.toFixed(2)}×</strong>
               </div>
             </div>
           </details>
           <div className="export-row">
             <span>
-              <Download size={15} /> Descargar
+              <Download size={15} /> Download
             </span>
             <a
               className="button small secondary"
               href={fileUrl(result.files.target, true)}
             >
-              Aislado WAV
+              Isolated WAV
             </a>
             <a
               className="button small secondary"
@@ -1121,8 +1119,8 @@ export default function App() {
                 disabled={!!busy}
                 onClick={exportVideo}
               >
-                <Film size={14} /> Exportar video ·{" "}
-                {track === "residual" ? "residual" : "aislado"}
+                <Film size={14} /> Export video ·{" "}
+                {track === "residual" ? "residual" : "isolated"}
               </button>
             )}
             {exported?.status === "done" && (
@@ -1130,7 +1128,7 @@ export default function App() {
                 className="button small primary"
                 href={fileUrl(exported.result.file, true)}
               >
-                Descargar MP4 <Download size={13} />
+                Download MP4 <Download size={13} />
               </a>
             )}
           </div>
@@ -1139,17 +1137,17 @@ export default function App() {
       <section className="history-section">
         <div className="section-heading">
           <h2>
-            <History size={18} /> Historial{" "}
+            <History size={18} /> History{" "}
             <span>{runs.length.toString().padStart(2, "0")}</span>
           </h2>
         </div>
         {runs.length ? (
           <div className="history-table">
             <div className="history-row table-head">
-              <span>FUENTE / PROMPT</span>
-              <span>MODELO</span>
-              <span>INFERENCIA</span>
-              <span>FACTOR</span>
+              <span>SOURCE / PROMPT</span>
+              <span>MODEL</span>
+              <span>INFERENCE</span>
+              <span>RTF</span>
               <span />
             </div>
             {runs.map((j) => (
@@ -1166,10 +1164,10 @@ export default function App() {
                   <span>
                     <strong>
                       {media.find((m) => m.id === j.result.recipe.media_id)
-                        ?.name || "Archivo"}
+                        ?.name || "File"}
                     </strong>
                     <small>
-                      {j.result.recipe.prompt || "Guía temporal / visual"} ·{" "}
+                      {j.result.recipe.prompt || "Temporal / visual guide"} ·{" "}
                       {time(j.result.recipe.start)}–{time(j.result.recipe.end)}
                     </small>
                   </span>
@@ -1183,7 +1181,7 @@ export default function App() {
                   className="button small ghost"
                   onClick={() => restore(j, true)}
                 >
-                  <Copy size={13} /> Duplicar
+                  <Copy size={13} /> Duplicate
                 </button>
               </div>
             ))}
@@ -1191,7 +1189,7 @@ export default function App() {
         ) : (
           <div className="empty-history">
             <FolderOpen size={22} />
-            <p>Sin resultados todavía.</p>
+            <p>No results yet.</p>
           </div>
         )}
       </section>

@@ -21,7 +21,7 @@ def frames_from(path):
         frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
     cap.release()
     if not frames:
-        raise ValueError('No se pudieron leer los fotogramas.')
+        raise ValueError('Could not read the video frames.')
     return frames
 
 
@@ -35,11 +35,11 @@ def load(kind, device, progress):
     _model = _processor = None
     gc.collect()
     empty_cache(torch, device)
-    progress('download', 'Comprobando pesos de SAM 3 visual')
+    progress('download', 'Checking SAM 3 visual weights')
     t = time.perf_counter()
     directory = snapshot_download('facebook/sam3', allow_patterns=['*.json', '*.txt', 'model.safetensors'])
     download = time.perf_counter()-t
-    progress('load', f'Cargando SAM 3 visual en {device.upper()}')
+    progress('load', f'Loading SAM 3 visual on {device.upper()}')
     t = time.perf_counter()
     # Load the canonical class: Transformers selects checkpoint conversion rules
     # by class name, so subclassing before from_pretrained loses backbone weights.
@@ -48,7 +48,7 @@ def load(kind, device, progress):
                                               attn_implementation='sdpa', output_loading_info=True)
     if loading_info.get('missing_keys') or loading_info.get('mismatched_keys') or loading_info.get('error_msgs'):
         _model = None
-        raise RuntimeError('SAM 3 no cargó todos los pesos requeridos. Revisa la versión del entorno visual.')
+        raise RuntimeError('SAM 3 did not load all required weights. Check the vision environment version.')
     _model = _model.eval().to(device)
     if kind == 'track':
         from types import MethodType
@@ -104,7 +104,7 @@ def infer(spec, frames, device, progress):
     out.mkdir(parents=True, exist_ok=True)
     t = time.perf_counter()
     if operation == 'detect':
-        progress('detect', f'Buscando «{req["text"]}»')
+        progress('detect', f'Finding “{req["text"]}”')
         frame = frames[min(req['frame'], len(frames)-1)]
         inputs = _processor(images=frame, text=req['text'], return_tensors='pt').to(device)
         with torch.inference_mode():
@@ -115,7 +115,7 @@ def infer(spec, frames, device, progress):
         np.save(out/'masks.npy', masks)
         return {'count': len(masks), 'masks': str((out/'masks.npy').relative_to(DATA)), 'scores': scores,
                 'frame': req['frame'], 'inference': time.perf_counter()-t, 'width': frame.shape[1], 'height': frame.shape[0]}
-    progress('track', 'Preparando seguimiento del objeto')
+    progress('track', 'Preparing object tracking')
     session = _processor.init_video_session(video=frames, inference_device=device, processing_device='cpu',
                                              video_storage_device='cpu', inference_state_device=device, dtype=torch.float32)
     h, w = frames[0].shape[:2]
@@ -155,11 +155,11 @@ def infer(spec, frames, device, progress):
                 masks[result.frame_idx] = array.astype(np.uint8)
                 processed.add(result.frame_idx)
                 if len(processed) % 5 == 0 or len(processed) == len(frames):
-                    progress('track', f'Siguiendo objeto · {len(processed)}/{len(frames)} fotogramas', progress=len(processed)/len(frames))
+                    progress('track', f'Tracking object · {len(processed)}/{len(frames)} frames', progress=len(processed)/len(frames))
     masks.flush()
     visible = sum(bool(masks[i].any()) for i in range(len(masks)))
     if not visible:
-        raise ValueError('El objeto no aparece en las máscaras. Añade un clic positivo o cambia la descripción.')
+        raise ValueError('The object is missing from the masks. Add a positive click or change the description.')
     return {'masks': str((out/'masks.npy').relative_to(DATA)), 'count': len(frames), 'visible_frames': visible,
             'width': w, 'height': h, 'fps': 25, 'inference': time.perf_counter()-t, 'annotations': annotations}
 
@@ -183,7 +183,7 @@ def vision_job(spec, progress):
         if 'out of memory' in message or device != 'mps' or not any(s in message for s in ['mps', 'metal', 'float64', 'not implemented']):
             raise
         fallback = str(exc)[:500]
-        progress('fallback', 'Operación visual incompatible con Metal; reintentando en CPU')
+        progress('fallback', 'Visual operation is incompatible with Metal; retrying on CPU')
         device = 'cpu'
         retry = load(spec['operation'], device, progress)
         timings = {k:timings[k]+retry[k] for k in timings}

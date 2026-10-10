@@ -10,8 +10,8 @@ from .config import AUDIO_PYTHON, VISION_PYTHON, FFMPEG, FFPROBE, ROOT, DATA, MO
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--audio-only', action='store_true', help='Omitir el entorno de visión opcional')
-    parser.add_argument('--check-access', action='store_true', help='Comprobar permisos en Hugging Face; requiere Internet')
+    parser.add_argument('--audio-only', action='store_true', help='Skip the optional vision environment')
+    parser.add_argument('--check-access', action='store_true', help='Check Hugging Face access; requires Internet')
     args = parser.parse_args()
     failures = []
 
@@ -29,7 +29,7 @@ def main():
             raise RuntimeError((result.stderr or result.stdout)[-1500:])
         return result.stdout.strip()
 
-    print(f'Python del servidor: {sys.executable}\nDatos: {DATA}')
+    print(f'Server Python: {sys.executable}\nData: {DATA}')
     check('FFmpeg', lambda: command(FFMPEG, '-version').splitlines()[0])
     check('ffprobe', lambda: command(FFPROBE, '-version').splitlines()[0])
     check('API', lambda: ', '.join(f'{p} {importlib.metadata.version(p)}' for p in ('fastapi', 'uvicorn', 'python-multipart')))
@@ -45,7 +45,7 @@ assert float((x*x).sum().cpu()) == 4
 video = VideoDecoder('examples/assets/office.mp4')
 assert video[0].numel() > 0
 assert AudioDecoder('examples/assets/office.mp4').get_all_samples().data.numel() > 0
-print(f'torch={torch.__version__}, torchaudio={torchaudio.__version__}, transformers={transformers.__version__}, dispositivo={device}; decodificación OK')
+print(f'torch={torch.__version__}, torchaudio={torchaudio.__version__}, transformers={transformers.__version__}, device={device}; decoding OK')
 '''
     check('SAM Audio', lambda: command(AUDIO_PYTHON, '-c', audio_check))
     if not args.audio_only:
@@ -56,7 +56,7 @@ from lab.device import select_device
 device = select_device(torch)
 x = torch.ones(4, device=device)
 assert float((x*x).sum().cpu()) == 4
-print(f'torch={torch.__version__}, transformers={transformers.__version__}, dispositivo={device}; clases SAM 3 OK')
+print(f'torch={torch.__version__}, transformers={transformers.__version__}, device={device}; SAM 3 classes OK')
 '''
         check('SAM 3 visual', lambda: command(VISION_PYTHON, '-c', vision_check))
     if args.check_access:
@@ -68,15 +68,15 @@ print(f'torch={torch.__version__}, transformers={transformers.__version__}, disp
             snippet = f'''
 from huggingface_hub import get_hf_file_metadata, hf_hub_url, get_token
 get_hf_file_metadata(hf_hub_url({json.dumps(repo)}, 'config.json'), token=get_token())
-print('autorizado')
+print('authorized')
 '''
             check(repo, lambda code=snippet: command(AUDIO_PYTHON, '-c', code))
     if not (ROOT/'web/dist/index.html').is_file():
-        print('AVISO  Interfaz sin compilar. Ejecuta npm --prefix web ci y npm --prefix web run build.')
+        print('WARNING  UI is not built. Run npm --prefix web ci and npm --prefix web run build.')
     if failures:
-        print('Revisa docs/INSTALLATION.md y docs/TROUBLESHOOTING.md.')
+        print('See docs/INSTALLATION.md and docs/TROUBLESHOOTING.md.')
         return 1
-    print('Diagnóstico correcto. Esto no reemplaza una inferencia real con checkpoints.')
+    print('Diagnostics passed. This does not replace real inference with checkpoints.')
     return 0
 
 

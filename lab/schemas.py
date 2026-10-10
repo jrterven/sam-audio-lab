@@ -11,7 +11,7 @@ class Region(BaseModel):
     @model_validator(mode='after')
     def valid(self):
         if self.end <= self.start:
-            raise ValueError('La región debe tener duración positiva.')
+            raise ValueError('The region must have a positive duration.')
         return self
 
 
@@ -29,13 +29,13 @@ class Recipe(BaseModel):
     def valid(self):
         duration = self.end - self.start
         if not 0 < duration <= 30.001:
-            raise ValueError('Selecciona un fragmento de hasta 30 segundos.')
+            raise ValueError('Select a clip of up to 30 seconds.')
         for i, r in enumerate(self.regions):
             if r.start < self.start or r.end > self.end + 1e-6:
-                raise ValueError('Las regiones deben estar dentro del fragmento.')
+                raise ValueError('Regions must stay within the clip.')
             for q in self.regions[:i]:
                 if r.sign != q.sign and max(r.start, q.start) < min(r.end, q.end):
-                    raise ValueError('Las regiones positivas y negativas no pueden superponerse.')
+                    raise ValueError('Positive and negative regions cannot overlap.')
         return self
 
 
@@ -64,10 +64,10 @@ class VisionRequest(BaseModel):
     @model_validator(mode='after')
     def valid(self):
         if not 0 < self.end - self.start <= 30.001:
-            raise ValueError('Selecciona un fragmento de hasta 30 segundos.')
+            raise ValueError('Select a clip of up to 30 seconds.')
         max_frame = math.ceil((self.end-self.start)*25)
         if self.frame >= max_frame or any(a.frame >= max_frame for a in self.annotations):
-            raise ValueError('Fotograma fuera del fragmento.')
+            raise ValueError('Frame is outside the clip.')
         return self
 
 

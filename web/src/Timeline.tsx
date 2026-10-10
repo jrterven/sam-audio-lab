@@ -92,7 +92,7 @@ export function Timeline({
     });
     w.load("", [peaks.length ? peaks : [0]], duration)
       .then(sync)
-      .catch((e) => console.error("No se pudo dibujar la onda", e));
+      .catch((e) => console.error("Could not render the waveform", e));
     return () => {
       media.removeEventListener("timeupdate", sync);
       loaded.current = false;

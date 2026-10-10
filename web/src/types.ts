@@ -77,7 +77,7 @@ export async function api<T = any>(
         ? data.detail
         : Array.isArray(data.detail)
           ? data.detail.map((e: any) => e.msg).join(" · ")
-          : "No se pudo completar la operación.",
+          : "Could not complete the operation.",
     );
   return data;
 }

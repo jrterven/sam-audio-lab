@@ -62,7 +62,7 @@ def test_clip_offsets_export_and_no_audio(tmp_path,monkeypatch):
     assert abs(media.probe(out)['duration']-2)<.1
     silent=tmp_path/'silent.mp4'
     media.command([media.FFMPEG,'-y','-v','error','-i',str(video),'-an','-c:v','copy',str(silent)])
-    with pytest.raises(ValueError,match='pista de audio'):
+    with pytest.raises(ValueError,match='audio track'):
         media.probe(silent)
 
 
@@ -127,7 +127,7 @@ def test_cancelled_import_has_recoverable_media_state(tmp_path,monkeypatch):
     supervisor=Jobs();job=supervisor.submit('import',{'media_id':m['id']})
     supervisor.cancel(job['id'])
     assert store.get(m['id'])['status']=='cancelled'
-    assert 'Vuelve a cargar' in store.get(m['id'])['error']
+    assert 'Upload the file again' in store.get(m['id'])['error']
 
 
 def test_visual_fallback_only_for_unsupported_metal_operations(tmp_path,monkeypatch):

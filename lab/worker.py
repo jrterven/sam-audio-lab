@@ -51,7 +51,7 @@ def separate(spec):
         _model = _processor = None
         gc.collect()
         empty_cache(torch, device)
-        progress('download', f'Comprobando y descargando {recipe["model"].title()}')
+        progress('download', f'Checking and downloading {recipe["model"].title()}')
         t = time.perf_counter()
         repo = MODELS[recipe['model']]
         directory = snapshot_download(repo, allow_patterns=['config.json', 'checkpoint.pt'], max_workers=2)
@@ -66,7 +66,7 @@ def separate(spec):
                     raise exc
         timings['download'] = time.perf_counter()-t
         revision = Path(directory).name
-        progress('load', f'Cargando SAM Audio {recipe["model"].title()} en {device.upper()}')
+        progress('load', f'Loading SAM Audio {recipe["model"].title()} on {device.upper()}')
         t = time.perf_counter()
         _model = SAMAudio.from_pretrained(directory, span_predictor=None, text_ranker=None, visual_ranker=None).eval().to(device)
         _model.vision_encoder.batch_size = 8
@@ -81,7 +81,7 @@ def separate(spec):
     anchors = [(r['sign'], r['start']-recipe['start'], r['end']-recipe['start']) for r in recipe['regions']]
     batch = _processor(audios=[audio], descriptions=[recipe['prompt']], anchors=[anchors] if anchors else None).to(device)
     if spec.get('tracking'):
-        progress('visual', 'Codificando el objeto seleccionado')
+        progress('visual', 'Encoding the selected object')
         t = time.perf_counter()
         tracking = spec['tracking']
         masks = np.load(DATA / tracking['masks'], mmap_mode='r')
@@ -102,7 +102,7 @@ def separate(spec):
     else:
         original_fn = None
     torch.manual_seed(recipe['seed'])
-    progress('separate', f'Separando {len(audio[0])/sr:.2f} s con {recipe["model"].title()}')
+    progress('separate', f'Separating {len(audio[0])/sr:.2f} s with {recipe["model"].title()}')
     t = time.perf_counter()
     try:
         with torch.inference_mode():
@@ -118,7 +118,7 @@ def separate(spec):
     for name in ('target', 'residual'):
         samples = getattr(result, name)[0].detach().float().cpu().numpy()[:audio.shape[-1]]
         if len(samples) != audio.shape[-1] or not np.isfinite(samples).all():
-            raise RuntimeError('El modelo generó audio inválido. Prueba un fragmento más corto.')
+            raise RuntimeError('The model generated invalid audio. Try a shorter clip.')
         path = output / f'{name}.wav'
         sf.write(path, samples, sr, subtype='FLOAT')
         files[name] = relative(path)
@@ -139,7 +139,7 @@ def run(spec):
         from .vision import vision_job
         return vision_job(spec, progress)
     if kind == 'import':
-        progress('inspect', 'Leyendo archivo y forma de onda')
+        progress('inspect', 'Reading file and waveform')
         info = probe(spec['path'])
         info['peaks'] = peaks(spec['path'], info['duration'])
         return info
@@ -148,12 +148,12 @@ def run(spec):
         return dict(clip, audio=relative(clip['audio']), video=relative(clip['video']) if clip['video'] else None,
                     peaks=peaks(clip['audio'], clip['duration']))
     if kind == 'export':
-        progress('export', 'Exportando el fragmento con el audio seleccionado')
+        progress('export', 'Exporting the clip with the selected audio')
         path = Path(spec['output']) / (spec['track']+'.mp4')
         path.parent.mkdir(parents=True, exist_ok=True)
         export_video(spec['media'], spec['recipe'], DATA/spec['audio'], path)
         return {'file': relative(path)}
-    raise ValueError('Operación desconocida')
+    raise ValueError('Unknown operation')
 
 
 if __name__ == '__main__':
@@ -166,7 +166,7 @@ if __name__ == '__main__':
             traceback.print_exc(file=sys.stderr)
             message = str(exc)
             if 'out of memory' in message.lower():
-                message = 'Memoria insuficiente. Elige Small o un fragmento más corto. ' + message[:300]
+                message = 'Not enough memory. Choose Small or a shorter clip. ' + message[:300]
             emit('error', message=message[-2000:])
             # Drop partially initialized or failed GPU state; the supervisor restarts us.
             break

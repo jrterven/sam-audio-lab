@@ -13,7 +13,7 @@ def main():
     parser.add_argument('--build', action='store_true', help='Rebuild the web UI before starting')
     args = parser.parse_args()
     if os.name == 'nt':
-        parser.error('En Windows ejecuta la aplicación dentro de WSL2. Consulta docs/INSTALLATION.md.')
+        parser.error('On Windows, run the application inside WSL2. See docs/INSTALLATION.md.')
     if args.build or not (ROOT/'web/dist/index.html').exists():
         subprocess.run(['npm', 'run', 'build'], cwd=ROOT/'web', check=True)
     os.environ.setdefault('HF_HUB_DISABLE_XET', '1')

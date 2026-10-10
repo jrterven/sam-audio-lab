@@ -18,10 +18,10 @@ def probe(path):
     audio = next((s for s in info['streams'] if s['codec_type'] == 'audio'), None)
     video = next((s for s in info['streams'] if s['codec_type'] == 'video' and not s.get('disposition', {}).get('attached_pic')), None)
     if audio is None:
-        raise ValueError('El archivo no contiene una pista de audio.')
+        raise ValueError('The file does not contain an audio track.')
     duration = float(info['format'].get('duration', audio.get('duration', 0)))
     if duration <= 0:
-        raise ValueError('No se pudo determinar la duración del archivo.')
+        raise ValueError('Could not determine the file duration.')
     return {'duration': duration, 'video': video is not None,
             'width': video.get('width', 0) if video else 0, 'height': video.get('height', 0) if video else 0}
 
@@ -36,7 +36,7 @@ def peaks(path, duration):
         if len(data):
             values.append(float(np.max(np.abs(data))))
     if p.wait():
-        raise RuntimeError('No se pudo analizar la forma de onda.')
+        raise RuntimeError('Could not analyze the waveform.')
     return values
 
 
@@ -46,19 +46,19 @@ def clip_key(media_id, start, end):
 
 def prepare_clip(media, start, end, progress=lambda *a: None):
     if start < 0 or end > media['duration'] + .05 or not 0 < end-start <= 30.001:
-        raise ValueError('Fragmento fuera de los límites del archivo.')
+        raise ValueError('Clip is outside the file boundaries.')
     directory = DATA / 'clips' / clip_key(media['id'], start, end)
     directory.mkdir(parents=True, exist_ok=True)
     src = DATA / media['path']
     duration = end-start
     wav = directory / 'original.wav'
     if not wav.exists():
-        progress('preprocess', 'Preparando audio a 48 kHz')
+        progress('preprocess', 'Preparing audio at 48 kHz')
         command([FFMPEG, '-y', '-v', 'error', '-ss', str(start), '-i', str(src), '-t', str(duration), '-vn', '-ac', '1', '-ar', '48000', '-c:a', 'pcm_f32le', str(directory/'original.partial.wav')])
         (directory/'original.partial.wav').replace(wav)
     video = directory / 'preview.mp4'
     if media['video'] and not video.exists():
-        progress('preprocess', 'Preparando video a 25 fps')
+        progress('preprocess', 'Preparing video at 25 fps')
         command([FFMPEG, '-y', '-v', 'error', '-ss', str(start), '-i', str(src), '-t', str(duration), '-map', '0:v:0', '-map', '0:a:0', '-vf', "scale='min(1280,iw)':-2,fps=25", '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '22', '-c:a', 'aac', '-ac', '1', '-ar', '48000', '-movflags', '+faststart', str(directory/'preview.partial.mp4')])
         (directory/'preview.partial.mp4').replace(video)
     dimensions = probe(video) if media['video'] else {'width': 0, 'height': 0}

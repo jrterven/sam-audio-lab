@@ -26,15 +26,15 @@ class Jobs:
     def start(self):
         for j in store.all_of('job'):
             if j['status'] not in TERMINAL:
-                store.update(j['id'], status='interrupted', message='La aplicación se reinició. Puedes repetir esta prueba.')
+                store.update(j['id'], status='interrupted', message='The application restarted. You can run this test again.')
                 if j['operation'] == 'import':
-                    store.update(j['spec']['media_id'], status='interrupted', error='Importación interrumpida. Vuelve a cargar el archivo.')
+                    store.update(j['spec']['media_id'], status='interrupted', error='Import interrupted. Upload the file again.')
         self.thread = threading.Thread(target=self.loop, daemon=True)
         self.thread.start()
 
     def submit(self, operation, spec):
         with self.lock:
-            job = store.save('job', {'operation': operation, 'spec': spec, 'status': 'queued', 'stage': 'queued', 'message': 'En cola', 'updated': time.time()})
+            job = store.save('job', {'operation': operation, 'spec': spec, 'status': 'queued', 'stage': 'queued', 'message': 'Queued', 'updated': time.time()})
             self.pending.put(job['id'])
         return job
 
@@ -42,9 +42,9 @@ class Jobs:
         with self.lock:
             job = store.get(job_id, 'job')
             if job['status'] not in TERMINAL:
-                store.update(job_id, status='cancelled', message='Cancelado', updated=time.time())
+                store.update(job_id, status='cancelled', message='Cancelled', updated=time.time())
                 if job['operation'] == 'import':
-                    store.update(job['spec']['media_id'], status='cancelled', error='Importación cancelada. Vuelve a cargar el archivo.')
+                    store.update(job['spec']['media_id'], status='cancelled', error='Import cancelled. Upload the file again.')
         return store.get(job_id)
 
     def stop_process(self):
@@ -68,7 +68,7 @@ class Jobs:
         self.stop_process()
         executable = VISION_PYTHON if runtime == 'vision' else AUDIO_PYTHON
         if not Path(executable).exists():
-            raise RuntimeError(f'Falta el entorno {executable}. Consulta docs/INSTALLATION.md.')
+            raise RuntimeError(f'Environment not found: {executable}. See docs/INSTALLATION.md.')
         env = dict(os.environ, PYTHONUNBUFFERED='1', SAM_LAB_DATA=str(DATA), TOKENIZERS_PARALLELISM='false',
                    SAM_LAB_AUDIO_PYTHON=AUDIO_PYTHON, SAM_LAB_VISION_PYTHON=VISION_PYTHON,
                    SAM_LAB_FFMPEG=FFMPEG, SAM_LAB_FFPROBE=FFPROBE)
@@ -93,7 +93,7 @@ class Jobs:
                 job = store.get(job_id)
                 if job['status'] == 'cancelled':
                     continue
-                store.update(job_id, status='running', stage='starting', message='Iniciando', updated=time.time())
+                store.update(job_id, status='running', stage='starting', message='Starting', updated=time.time())
             operation = job['operation']
             try:
                 runtime = 'vision' if operation in ('detect', 'track') else 'audio'
@@ -114,7 +114,7 @@ class Jobs:
                         except queue.Empty:
                             continue
                         if line is None:
-                            raise RuntimeError('El proceso de inferencia terminó inesperadamente. Puedes repetir la prueba.')
+                            raise RuntimeError('The inference process stopped unexpectedly. You can try again.')
                         if not line.startswith('@@SAMLAB@@'):
                             logfile.write(line)
                             logfile.flush()
@@ -131,7 +131,7 @@ class Jobs:
                                 result = event['result']
                                 if operation == 'import':
                                     store.update(job['spec']['media_id'], **result, status='ready')
-                                store.update(job_id, result=result, status='done', stage='done', message='Completado', updated=time.time())
+                                store.update(job_id, result=result, status='done', stage='done', message='Completed', updated=time.time())
                             break
             except Exception as exc:
                 self.stop_process()

@@ -38,7 +38,7 @@ def test_device_auto_and_override(cuda, mps, expected, monkeypatch):
     with pytest.raises(ValueError):
         select_device(torch)
     monkeypatch.setenv('SAM_LAB_DEVICE', 'cuda' if not cuda else 'mps')
-    with pytest.raises(RuntimeError, match='no está disponible'):
+    with pytest.raises(RuntimeError, match='is not available'):
         select_device(torch)
 
 

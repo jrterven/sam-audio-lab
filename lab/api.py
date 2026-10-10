@@ -32,13 +32,13 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1', 'localhost
 async def local_origin(request: Request, call_next):
     origin = request.headers.get('origin')
     if origin and urlparse(origin).hostname not in ('localhost', '127.0.0.1'):
-        return JSONResponse({'detail': 'Solo se permiten solicitudes locales.'}, status_code=403)
+        return JSONResponse({'detail': 'Only local requests are allowed.'}, status_code=403)
     return await call_next(request)
 
 
 @app.exception_handler(KeyError)
 async def missing(request, exc):
-    return JSONResponse({'detail': 'No se encontró el recurso solicitado.'}, status_code=404)
+    return JSONResponse({'detail': 'The requested resource was not found.'}, status_code=404)
 
 
 @app.exception_handler(ValueError)
@@ -49,7 +49,7 @@ async def invalid(request, exc):
 def safe_file(path):
     resolved = (DATA/path).resolve()
     if not resolved.is_relative_to(DATA) or not resolved.is_file():
-        raise HTTPException(404, 'Archivo no encontrado.')
+        raise HTTPException(404, 'File not found.')
     return resolved
 
 
@@ -75,7 +75,7 @@ def models():
 
 @app.post('/api/media')
 def upload(file: UploadFile):
-    record = store.save('media', {'name': Path(file.filename or 'archivo').name, 'status': 'importing'})
+    record = store.save('media', {'name': Path(file.filename or 'file').name, 'status': 'importing'})
     directory = DATA/'media'/record['id']
     directory.mkdir(parents=True)
     # Preserve the extension only; user filenames never become filesystem paths.
@@ -84,7 +84,7 @@ def upload(file: UploadFile):
         with path.open('wb') as out:
             shutil.copyfileobj(file.file, out, length=1024*1024)
     except Exception:
-        store.update(record['id'], status='error', error='No se pudo guardar el archivo.')
+        store.update(record['id'], status='error', error='Could not save the file.')
         raise
     record = store.update(record['id'], path=str(path.relative_to(DATA)))
     job = jobs.submit('import', {'path': str(path), 'media_id': record['id']})
@@ -109,18 +109,18 @@ def example():
 def project(project_id: str, body: dict):
     # Projects are editable drafts; each execution saves a separate frozen recipe.
     if len(json.dumps(body)) > 100000:
-        raise HTTPException(413, 'Proyecto demasiado grande.')
+        raise HTTPException(413, 'Project is too large.')
     return store.save('project', body, project_id)
 
 
 def media_for(media_id, start, end, video=False):
     media = store.get(media_id, 'media')
     if media['status'] != 'ready':
-        raise HTTPException(409, 'El archivo todavía no está disponible.')
+        raise HTTPException(409, 'The file is not ready yet.')
     if not 0 <= start < end <= media['duration']+.05 or end-start > 30.001:
-        raise HTTPException(422, 'Selecciona un fragmento válido de hasta 30 segundos.')
+        raise HTTPException(422, 'Select a valid clip of up to 30 seconds.')
     if video and not media['video']:
-        raise HTTPException(422, 'Esta operación requiere un video.')
+        raise HTTPException(422, 'This operation requires a video.')
     return media
 
 
@@ -134,15 +134,15 @@ def clip(recipe: Recipe):
 def separate(recipe: Recipe):
     media = media_for(recipe.media_id, recipe.start, recipe.end)
     if not (recipe.prompt.strip() or recipe.regions or recipe.tracking_id):
-        raise HTTPException(422, 'Añade texto, una región o un objeto visual.')
+        raise HTTPException(422, 'Add a text prompt, a region, or a visual object.')
     spec = {'media': media, 'recipe': recipe.model_dump()}
     if recipe.tracking_id:
         track = store.get(recipe.tracking_id, 'job')
         if track['operation'] != 'track' or track['status'] != 'done':
-            raise HTTPException(422, 'Primero completa el seguimiento del objeto.')
+            raise HTTPException(422, 'Complete object tracking first.')
         v = track['spec']['request']
         if v['media_id'] != recipe.media_id or abs(v['start']-recipe.start) > 1e-6 or abs(v['end']-recipe.end) > 1e-6:
-            raise HTTPException(422, 'El seguimiento pertenece a otro fragmento. Repite el seguimiento.')
+            raise HTTPException(422, 'Tracking belongs to a different clip. Run tracking again.')
         spec['tracking'] = track['result']
     return public_job(jobs.submit('separate', spec))
 
@@ -150,28 +150,28 @@ def separate(recipe: Recipe):
 def vision(request, operation):
     media = media_for(request.media_id, request.start, request.end, True)
     if operation == 'detect' and not request.text.strip():
-        raise HTTPException(422, 'Describe el objeto que quieres encontrar.')
+        raise HTTPException(422, 'Describe the object you want to find.')
     if operation == 'track' and not request.annotations:
-        raise HTTPException(422, 'Selecciona un objeto o añade un clic positivo.')
+        raise HTTPException(422, 'Select an object or add a positive click.')
     spec = {'media': media, 'request': request.model_dump(), 'detections': {}, 'tracks': {}}
     for a in request.annotations:
         if a.tracking_id:
             prior = store.get(a.tracking_id, 'job')
             if prior['operation'] != 'track' or prior['status'] != 'done':
-                raise HTTPException(422, 'Seguimiento de referencia no disponible.')
+                raise HTTPException(422, 'Reference tracking is unavailable.')
             r = prior['spec']['request']
             if (r['media_id'], r['start'], r['end']) != (request.media_id, request.start, request.end):
-                raise HTTPException(422, 'El seguimiento pertenece a otro fragmento.')
+                raise HTTPException(422, 'Tracking belongs to a different clip.')
             spec['tracks'][a.tracking_id] = prior['result']
         if a.detection_id:
             detection = store.get(a.detection_id, 'job')
             if detection['operation'] != 'detect' or detection['status'] != 'done':
-                raise HTTPException(422, 'Detección no disponible.')
+                raise HTTPException(422, 'Detection is unavailable.')
             r = detection['spec']['request']
             if (r['media_id'], r['start'], r['end'], r['frame']) != (request.media_id, request.start, request.end, a.frame):
-                raise HTTPException(422, 'La máscara pertenece a otro fotograma o fragmento.')
+                raise HTTPException(422, 'The mask belongs to a different frame or clip.')
             if a.candidate >= detection['result']['count']:
-                raise HTTPException(422, 'Objeto no encontrado.')
+                raise HTTPException(422, 'Object not found.')
             spec['detections'][a.detection_id] = detection['result']
     return public_job(jobs.submit(operation, spec))
 
@@ -240,10 +240,10 @@ def mask(job_id: str, frame: int):
 def export(request: ExportRequest):
     run = store.get(request.run_id, 'job')
     if run['status'] != 'done' or run['operation'] != 'separate':
-        raise HTTPException(422, 'Resultado no disponible.')
+        raise HTTPException(422, 'Result is unavailable.')
     spec = run['spec']
     if not spec['media']['video']:
-        raise HTTPException(422, 'El archivo original no es un video.')
+        raise HTTPException(422, 'The original file is not a video.')
     return public_job(jobs.submit('export', {'media': spec['media'], 'recipe': spec['recipe'], 'audio': run['result']['files'][request.track], 'track': request.track}))
 
 

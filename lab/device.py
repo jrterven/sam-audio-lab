@@ -8,9 +8,9 @@ def select_device(torch):
     if requested == 'auto':
         return next(d for d in ('cuda', 'mps', 'cpu') if available[d])
     if requested not in available:
-        raise ValueError('SAM_LAB_DEVICE debe ser auto, cuda, mps o cpu.')
+        raise ValueError('SAM_LAB_DEVICE must be auto, cuda, mps, or cpu.')
     if not available[requested]:
-        raise RuntimeError(f'El dispositivo {requested} no está disponible en este entorno de PyTorch.')
+        raise RuntimeError(f'The {requested} device is not available in this PyTorch environment.')
     return requested
 
 

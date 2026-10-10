@@ -1,108 +1,118 @@
 <h1 align="center">SAM Audio Lab</h1>
 
 <p align="center">
-  Separa sonidos de audio y video con texto, regiones y objetos.<br>
-  Interfaz web local en español · SAM Audio Small, Base y Large · SAM 3 visual
+  Separate sounds from audio and video using text, regions, and objects.<br>
+  Local web interface · SAM Audio Small, Base, and Large · SAM 3 visual prompts
 </p>
 
 <p align="center">
-  <a href="https://github.com/jrterven/sam-audio-lab/actions/workflows/ci.yaml"><img src="https://github.com/jrterven/sam-audio-lab/actions/workflows/ci.yaml/badge.svg" alt="Pruebas y compilación"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/Licencia-SAM-345fe5" alt="Licencia SAM"></a>
-  <a href="docs/INSTALLATION.md"><img src="https://img.shields.io/badge/macOS-Metal-345fe5" alt="macOS con Metal"></a>
-  <a href="docs/INSTALLATION.md#linux"><img src="https://img.shields.io/badge/Linux%20%2F%20WSL2-Gu%C3%ADas-7187b0" alt="Guías para Linux y WSL2"></a>
+  <a href="https://github.com/jrterven/sam-audio-lab/actions/workflows/ci.yaml"><img src="https://github.com/jrterven/sam-audio-lab/actions/workflows/ci.yaml/badge.svg" alt="Tests and build"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-SAM-345fe5" alt="SAM License"></a>
+  <a href="docs/INSTALLATION.md"><img src="https://img.shields.io/badge/macOS-Metal-345fe5" alt="macOS with Metal"></a>
+  <a href="docs/INSTALLATION.md#linux"><img src="https://img.shields.io/badge/Linux%20%2F%20WSL2-Guides-7187b0" alt="Linux and WSL2 guides"></a>
 </p>
 
 <p align="center">
-  <a href="#instalar">Instalar</a> ·
-  <a href="#correr-la-aplicación">Correr</a> ·
-  <a href="#capturas">Capturas</a> ·
-  <a href="LAB.md">Uso</a> ·
-  <a href="docs/TROUBLESHOOTING.md">Ayuda</a> ·
-  <a href="#autoría-y-licencia">Licencia</a>
+  <a href="#install">Install</a> ·
+  <a href="#run-the-app">Run</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#first-run">Usage</a> ·
+  <a href="docs/TROUBLESHOOTING.md">Help</a> ·
+  <a href="#credits-and-license">License</a>
 </p>
 
-![Selección de una persona con SAM 3 y regiones positivas y negativas en SAM Audio Lab](docs/assets/sam-audio-lab.jpg)
+![SAM 3 person selection with positive and negative temporal regions in SAM Audio Lab](docs/assets/sam-audio-lab.jpg)
 
-<p align="center"><sub>Captura real con el video de ejemplo: máscara de SAM 3, seguimiento y regiones temporales.</sub></p>
+<p align="center"><sub>Actual app screenshot using the sample video: SAM 3 mask, object tracking, and temporal regions.</sub></p>
 
-## Qué puedes hacer
+## Features
 
-- **Prompts de texto:** `man speaking`, `dog barking`, `guitar` o tu propia descripción.
-- **Regiones temporales:** dibuja, mueve y ajusta intervalos donde el sonido está
-  presente (+) o ausente (−). Son referencias; el recorte se controla por separado.
-- **Objetos del video:** encuentra objetos por texto, elige una instancia, usa clics
-  positivos/negativos y corrige su seguimiento en otros fotogramas.
-- **Comparación manual:** selecciona Small, Base o Large; duplica una prueba desde
-  el historial para repetir sus entradas con otro modelo.
-- **Escucha sincronizada:** cambia entre Original, Aislado y Residual conservando
-  la posición. Exporta WAV o el fragmento de video en MP4 con la pista elegida.
-- **Historial persistente:** conserva prompts, máscaras, modelo, semilla,
-  revisiones y tiempos. La aplicación permite cancelar trabajos y recuperarse.
+- **Text prompts:** `man speaking`, `dog barking`, `guitar`, or your own description.
+- **Temporal regions:** draw, move, and resize intervals where the sound is
+  present (+) or absent (−). These guide separation; the output clip is set separately.
+- **Video objects:** find objects by text, select an instance, add positive or
+  negative clicks, and refine tracking on other frames.
+- **Model comparison:** choose Small, Base, or Large. Duplicate a run from the
+  history to reuse its inputs with another model.
+- **Synchronized playback:** switch between Original, Isolated, and Residual
+  without losing your position. Export WAV or an MP4 clip with the selected track.
+- **Persistent history:** keep prompts, masks, model, seed, revisions, and timings.
+  Cancel jobs and retry interrupted runs.
 
-Los medios se procesan en tu computadora. Se necesita Internet para instalar
-dependencias y descargar modelos desde Hugging Face; los archivos cargados no se
-envían a un servicio de inferencia. El servidor escucha solo en `127.0.0.1`.
+Media is processed on your computer. Internet access is needed to install
+packages and download models from Hugging Face; uploaded files are not sent to
+an inference service. The server listens only on `127.0.0.1`.
 
-## Capturas
+## Screenshots
 
 <details>
-<summary><strong>Texto y regiones</strong> · describe el sonido y marca dónde aparece</summary>
+<summary><strong>Text and regions</strong> · describe the sound and mark where it occurs</summary>
 
-![Prompt woman speaking con regiones positiva y negativa, recorte independiente y selector de modelo](docs/assets/text-and-regions.jpg)
+![The woman speaking prompt with positive and negative regions, independent clip boundaries, and model selection](docs/assets/text-and-regions.jpg)
 
-Texto, regiones y guía visual se pueden combinar en la misma ejecución.
-El recorte superior determina la duración de la salida; las regiones inferiores
-indican presencia o ausencia del sonido.
+Combine text, temporal regions, and a visual guide in the same run.
+The upper clip controls set the output duration; the lower regions mark
+where the target sound is present or absent.
 
 </details>
 
 <details open>
-<summary><strong>Resultados e historial</strong> · escucha, compara y exporta</summary>
+<summary><strong>Results and history</strong> · listen, compare, and export</summary>
 
-![Resultado con tiempos por etapa, exportaciones WAV y MP4 e historial de pruebas con Small, Base y Large](docs/assets/results-and-history.jpg)
+![Per-stage timings, WAV and MP4 exports, and a history of Small, Base, and Large runs](docs/assets/results-and-history.jpg)
 
-Los tiempos corresponden a ejecuciones reales del ejemplo `office.mp4` y a una
-copia repetida para la prueba de 30 segundos. No son un benchmark controlado.
+The timings shown come from actual runs using `office.mp4` and a repeated copy
+of that sample for the 30-second test. They are not a controlled benchmark.
 
 </details>
 
-## Plataformas
+## Platforms
 
-| Sistema | Ejecución | Estado de validación |
+| System | Runtime | Validation status |
 | --- | --- | --- |
-| macOS con Apple Silicon | Metal / MPS, float32 | Small, Base, Large y SAM 3 visual probados en M4 Max, 128 GB |
-| Linux | NVIDIA CUDA si PyTorch la detecta; CPU como alternativa | Instalación documentada; inferencia GPU pendiente de validar en hardware Linux |
-| Windows 11 / Windows 10 compatible con WSL2 | Ubuntu dentro de WSL2; CUDA o CPU | Instalación documentada; pendiente de validar en Windows |
-| Mac Intel | CPU, sujeto a disponibilidad de paquetes | No validado; no es la plataforma recomendada |
+| macOS with Apple Silicon | Metal / MPS, float32 | Small, Base, Large, and SAM 3 visual tested on an M4 Max with 128 GB |
+| Linux | NVIDIA CUDA when detected by PyTorch; CPU fallback | Installation documented; GPU inference not yet validated on Linux hardware |
+| Windows 11 / Windows 10 with WSL2 support | Ubuntu inside WSL2; CUDA or CPU | Installation documented; not yet validated on Windows |
+| Intel Mac | CPU, subject to package availability | Not validated; not the recommended platform |
 
-**Windows nativo no está soportado por el supervisor actual. Usa WSL2.**
-No se ha establecido un mínimo garantizado de RAM/VRAM. Empieza con Small y un clip
-de 5 segundos. Los checkpoints ocupan aproximadamente 4.75 GiB (Small),
-7.19 GiB (Base) y 13.84 GiB (Large), sin contar encoders, SAM 3 ni los entornos.
+**Native Windows is not supported by the current process supervisor. Use WSL2.**
+There is no established minimum RAM/VRAM requirement across all platforms.
+Start with Small and a 5-second clip. The audio checkpoints take approximately
+4.75 GiB (Small), 7.19 GiB (Base), and 13.84 GiB (Large), excluding encoders,
+SAM 3, and the Python environments.
 
-## Instalar
+## Install
 
-Requisitos: Git, Conda (Miniforge, Miniconda o Anaconda), Node.js 22.12+ con npm,
-FFmpeg y una cuenta de Hugging Face con acceso aprobado a los modelos.
+You need Git, Conda (Miniforge, Miniconda, or Anaconda), Node.js 22.12+ with npm,
+FFmpeg, and a Hugging Face account with approved access to the models.
 
 ```bash
 git clone https://github.com/jrterven/sam-audio-lab.git
 cd sam-audio-lab
 ```
 
-Continúa con la guía de tu sistema:
+Follow the installation guide for your system. The detailed guides linked below
+are currently in Spanish; their commands can be copied as written.
 
 | macOS | Linux | Windows |
 | :---: | :---: | :---: |
-| [Apple Silicon / Metal](docs/INSTALLATION.md#macos-con-apple-silicon) | [NVIDIA CUDA o CPU](docs/INSTALLATION.md#linux) | [Ubuntu en WSL2](docs/INSTALLATION.md#windows-con-wsl2) |
+| [Apple Silicon / Metal](docs/INSTALLATION.md#macos-con-apple-silicon) | [NVIDIA CUDA or CPU](docs/INSTALLATION.md#linux) | [Ubuntu in WSL2](docs/INSTALLATION.md#windows-con-wsl2) |
 
-La guía crea dos entornos: **`sam3`** para audio/API (Python 3.11, Transformers 4)
-y **`sam3-vision`** para segmentación visual (Python 3.12, Transformers 5).
-No se deben combinar. El entorno visual es opcional para texto y regiones.
+The guide creates two separate environments: **`sam3`** for audio and the API
+(Python 3.11, Transformers 4), and **`sam3-vision`** for visual segmentation
+(Python 3.12, Transformers 5). Do not combine them. The vision environment is
+optional for text and temporal prompts.
 
-## Correr la aplicación
+Request access to [SAM Audio Small](https://huggingface.co/facebook/sam-audio-small),
+[Base](https://huggingface.co/facebook/sam-audio-base),
+[Large](https://huggingface.co/facebook/sam-audio-large), and
+[SAM 3](https://huggingface.co/facebook/sam3) as needed. SAM Audio access does
+not automatically grant SAM 3 access. Sign in with `hf auth login` from your
+installed environment and enter your token only in the terminal prompt.
 
-Una vez instalada, desde la raíz del repositorio:
+## Run the app
+
+After installation, run these commands from the repository root:
 
 ```bash
 conda activate sam3
@@ -110,78 +120,94 @@ python -m lab.doctor
 python run_lab.py
 ```
 
-Abre **[127.0.0.1:8765](http://127.0.0.1:8765/)**. Detén el servidor con `Ctrl+C` en la terminal.
-También puedes iniciarlo sin activar el entorno:
+Open **[127.0.0.1:8765](http://127.0.0.1:8765/)**. Stop the server with `Ctrl+C`
+in the terminal. You can also launch it without activating the environment:
 
 ```bash
 conda run --no-capture-output -n sam3 python run_lab.py
 ```
 
-`python run_lab.py --build` recompila la interfaz; `--port 8766` usa otro puerto.
-Los modelos se descargan al usarlos por primera vez. El dropdown indica si el
-checkpoint está en caché. Tener el checkpoint no garantiza que todos sus encoders
-ya estén descargados.
+Use `python run_lab.py --build` to rebuild the interface, or `--port 8766` to
+choose another port. Models download on first use. The dropdown shows whether
+the checkpoint is cached; its encoders may still need to be downloaded.
 
-## Primera prueba
+## First run
 
-1. Usa el botón de ejemplo para cargar `office.mp4`, o carga tu propio archivo.
-2. Selecciona un fragmento de 0 a 5 segundos y prepáralo.
-3. Escribe `man speaking`, selecciona **Small** y pulsa **Separar sonido**.
-4. Escucha Aislado y Residual; descarga el WAV.
-5. Duplica la prueba y selecciona Base o Large para comparar.
+1. Click **Use sample video** to load `office.mp4`, or **Upload file** to use your own media.
+2. Set **From** to 0 and **To** to 5, then click **Prepare clip**.
+3. In **Text**, enter `man speaking`, choose **Small**, and click **Separate sound**.
+4. Switch between **Original**, **Isolated**, and **Residual**, then download a WAV.
+5. Click **Duplicate** in the history and select Base or Large to compare.
 
-Para probar visión, busca `person`, elige una máscara, pulsa **Seguir objeto en
-el clip** y revisa el resultado antes de separar. [Guía completa de uso](LAB.md).
+For temporal prompts, select **Present** or **Absent**, then drag on the waveform.
+Move or resize a region to adjust it, or use its × button to delete it. The
+regions do not change the clip boundaries.
 
-## Límites y resultados medidos
+For visual prompts, open **Video object**, enter `person`, and click **Find object**.
+Choose a candidate with **Select**, or use **Include** and **Exclude** to mark
+points on the paused video. Click **Track object in clip** and review the mask
+before separating. To correct tracking, pause at another frame, add clicks,
+and track again. Keep a text prompt and regions if you want to combine all three
+forms of guidance.
 
-Se aceptan archivos largos, procesando recortes de **hasta 30 segundos**. Cada
-ejecución separa una fuente/objeto con audio mono a 48 kHz, precisión float32,
-semilla 42 y una candidata. No incluye reranking ni predicción automática de
-regiones. La máscara visual guía la separación; no garantiza aislamiento perfecto.
+Expand **Timings and details** to inspect a run. **Export video** uses the Isolated
+or Residual track selected in the player (Isolated when Original is selected).
+The completed export appears as **Download MP4**.
 
-Mediciones individuales en M4 Max, 128 GB (9 de octubre de 2026):
+## Limits and measured results
 
-| Prueba | Clip | Separación de audio |
+Long files are supported by processing clips of **up to 30 seconds**. Each run
+separates one source or object with mono 48 kHz audio, float32 precision, seed 42,
+and one separation candidate. Automatic region prediction and reranking are
+not included. A visual mask guides separation; it does not guarantee perfect isolation.
+
+Individual measurements on an M4 Max with 128 GB (October 9, 2026):
+
+| Test | Clip | Audio separation |
 | --- | ---: | ---: |
-| Small, texto + regiones + objeto | 5 s | 6.45 s |
-| Base, texto | 5 s | 13.65 s |
-| Large, texto | 5 s | 12.78 s |
-| Small, texto + regiones, recorte desde el segundo 2 | 30 s | 24.63 s |
+| Small, text + regions + object | 5 s | 6.45 s |
+| Base, text | 5 s | 13.65 s |
+| Large, text | 5 s | 12.78 s |
+| Small, text + regions, starting at second 2 | 30 s | 24.63 s |
 
-Estas mediciones no son un benchmark controlado ni una evaluación de calidad.
-El seguimiento visual de 5 s tardó **379.53 s adicionales**, y el encoder visual
-de audio, 29.20 s. El factor de tiempo real divide únicamente el tiempo de
-separación por la duración del audio. [Detalles de validación](LAB.md#validación-realizada-en-esta-mac).
+These measurements are not a controlled benchmark or a quality evaluation.
+Tracking the 5-second video took **an additional 379.53 s**, and the audio model's
+visual encoder took 29.20 s. The real-time factor (RTF) is audio separation time
+divided by clip duration; it excludes the other stages.
+[Validation notes (Spanish)](LAB.md#validación-realizada-en-esta-mac).
 
-## Datos y documentación
+## Data and documentation
 
-Los proyectos, medios y resultados están en `.lab-data/`; los checkpoints usan la
-caché de Hugging Face. Ninguno se incluye en Git. Conserva **todo** `.lab-data/`
-para respaldar el historial, deteniendo antes el servidor.
+Projects, media, and results are stored in `.lab-data/`; checkpoints use the
+Hugging Face cache. Neither is committed to Git. To back up your history, stop
+the server and copy the **entire** `.lab-data/` directory.
 
-- [Instalación, credenciales y configuración](docs/INSTALLATION.md)
-- [Uso, tiempos e inferencias reales](LAB.md)
-- [Diagnóstico y errores frecuentes](docs/TROUBLESHOOTING.md)
-- [API, procesos y almacenamiento](docs/ARCHITECTURE.md)
-- [Contribuir y ejecutar pruebas](CONTRIBUTING.md)
-- [Registro del entorno Mac original](MACOS.md)
-- [Documentación original de SAM Audio](docs/upstream/README.md)
+The detailed project guides are currently in Spanish:
 
-## Autoría y licencia
+- [Installation, credentials, and configuration](docs/INSTALLATION.md)
+- [Usage, timings, and real inference validation](LAB.md)
+- [Diagnostics and troubleshooting](docs/TROUBLESHOOTING.md)
+- [API, processes, and storage](docs/ARCHITECTURE.md)
+- [Contributing and running tests](CONTRIBUTING.md)
+- [Original Mac environment notes](MACOS.md)
 
-SAM Audio Lab es una adaptación independiente mantenida por
-[Juan Terven](https://github.com/jrterven); no es una aplicación oficial de Meta.
-Parte de [facebookresearch/sam-audio](https://github.com/facebookresearch/sam-audio),
-commit `bb4c6999d2677c7402360e426afc01ddfad6dce0`, y conserva su historial y avisos.
+The [original SAM Audio documentation](docs/upstream/README.md) is available in English.
 
-El código derivado y las aportaciones del Lab se distribuyen bajo la
-**[SAM License](LICENSE)** de Meta, conservada sin cambios. **SAM 3 también usa
-SAM License**: se incluye una [copia oficial](licenses/SAM3-LICENSE) con su
-[procedencia y revisión](licenses/README.md).
+## Credits and license
 
-La implementación de SAM 3 en Transformers, Perception Encoder y DACVAE tienen
-licencias propias; no cambian la licencia de los modelos de Meta. Los pesos se
-descargan desde los repositorios oficiales de Hugging Face y no se redistribuyen
-aquí. Consulta **[NOTICE.md](NOTICE.md)** para la atribución, el alcance de cada
-licencia y las condiciones de redistribución.
+SAM Audio Lab is an independent adaptation maintained by
+[Juan Terven](https://github.com/jrterven), not an official Meta application.
+It is based on [facebookresearch/sam-audio](https://github.com/facebookresearch/sam-audio),
+commit `bb4c6999d2677c7402360e426afc01ddfad6dce0`, and preserves its history and notices.
+
+The derived code and Lab contributions are distributed under Meta's original
+**[SAM License](LICENSE)**, preserved without changes. **SAM 3 also uses SAM
+License**: an [official copy](licenses/SAM3-LICENSE) and its
+[source revision](licenses/README.md) are included.
+
+The SAM 3 implementation in Transformers, Perception Encoder, and DACVAE have
+their own licenses, which do not replace the licenses of Meta's models.
+Model weights are downloaded from the official Hugging Face repositories and
+are not redistributed here. See **[NOTICE.md](NOTICE.md)** (Spanish) for
+attribution, component license scope, and redistribution conditions; the
+included license texts are in English.
