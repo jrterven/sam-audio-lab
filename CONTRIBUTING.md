@@ -1,31 +1,57 @@
-# Contributing to segment-anything-model-audio
-We want to make contributing to this project as easy and transparent as
-possible.
+# Contribuir a SAM Audio Lab
 
-## Pull Requests
-We actively welcome your pull requests.
+Este repositorio mantiene la aplicación local. Para cambios en el modelo original,
+consulta [SAM Audio upstream](https://github.com/facebookresearch/sam-audio) y sus
+[instrucciones de contribución](docs/upstream/CONTRIBUTING.md).
 
-1. Fork the repo and create your branch from `main`.
-2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. If you haven't already, complete the Contributor License Agreement ("CLA").
+## Preparar y probar
 
-## Contributor License Agreement ("CLA")
-In order to accept your pull request, we need you to submit a CLA. You only need
-to do this once to work on any of Facebook's open source projects.
+Completa [la instalación](docs/INSTALLATION.md). Desde la raíz:
 
-Complete your CLA here: <https://code.facebook.com/cla>
+```bash
+conda activate sam3
+python -m pip install -r requirements-lab-dev.txt
+python -m pytest tests/test_lab.py tests/test_portability.py -q
+npm --prefix web ci
+npm --prefix web run build
+```
 
-## Issues
-We use GitHub issues to track public bugs. Please ensure your description is
-clear and has sufficient instructions to be able to reproduce the issue.
+Estas pruebas no descargan checkpoints. Comprueban recortes, VFR, exportación,
+validación de entradas, persistencia, cancelación en cola, límites de la API,
+lotes del encoder y selección/configuración del dispositivo. Las pruebas de
+política CUDA no demuestran inferencia CUDA en hardware real.
 
-Facebook has a [bounty program](https://www.facebook.com/whitehat/) for the safe
-disclosure of security bugs. In those cases, please go through the process
-outlined on that page and do not file a public issue.
+Para desarrollar el frontend, inicia la API en una terminal con `python run_lab.py`
+y, en otra, `npm --prefix web run dev`. Abre la URL que imprime Vite; `/api` se
+redirige a la API local en el puerto 8765. La compilación de producción se vuelve
+a generar con `python run_lab.py --build`.
 
-## License
-By contributing to segment-anything-model-audio, you agree that your contributions will be licensed
-under the LICENSE file in the root directory of this source tree.
+## Inferencia real, opcional
+
+Requiere permisos en Hugging Face, modelos descargables y memoria suficiente.
+Con el servidor iniciado en 8765:
+
+```bash
+python -m tests.smoke_lab
+python -m tests.recovery_lab
+python -m tests.vision_regression
+```
+
+Ejecuta primero `smoke_lab`: importa el ejemplo, prepara seguimiento, ejecuta los
+tres tamaños y genera `outputs/lab-validation.json`. Las siguientes pruebas
+comprueban recuperación/cancelación y correcciones visuales. Son pruebas costosas,
+crean resultados locales y pueden descargar checkpoints. No se ejecutan en CI.
+El historial y los informes completos no se suben al repositorio.
+
+## Pull requests
+
+1. Crea una rama desde `main` y mantén el cambio acotado.
+2. Describe el problema y el comportamiento resultante.
+3. Incluye pruebas relevantes y actualiza las guías si cambia la instalación.
+4. Indica sistema, dispositivo, modelo y duración de cualquier inferencia real.
+5. No incluyas tokens, pesos, cachés, entornos ni medios privados.
+
+CI compila el frontend y ejecuta pruebas de backend en CPU sin checkpoints.
+Una prueba de CI correcta no certifica los modelos en GPU. Las contribuciones a
+este repositorio se distribuyen bajo [la licencia incluida](LICENSE). La política
+CLA del documento upstream corresponde al proyecto original de Meta.

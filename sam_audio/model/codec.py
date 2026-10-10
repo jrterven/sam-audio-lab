@@ -2,6 +2,7 @@
 
 import math
 from abc import ABCMeta, abstractmethod
+from contextlib import nullcontext
 from typing import Union
 
 import dacvae
@@ -63,7 +64,11 @@ class DACVAEEncoder(Encoder):
         self.quantizer = model.quantizer
 
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
-        with torch.no_grad(), torch.backends.cudnn.flags(enabled=False):
+        cudnn_context = (
+            torch.backends.cudnn.flags(enabled=False)
+            if waveform.is_cuda else nullcontext()
+        )
+        with torch.no_grad(), cudnn_context:
             z = self.encoder(self._pad(waveform))
             mean, _ = self.quantizer.in_proj(z).chunk(2, dim=1)
             encoded_frames = mean
@@ -84,7 +89,11 @@ class DACVAE(DACVAEEncoder, Codec):
         self.decoder = model.decoder
 
     def decode(self, encoded_frames: torch.Tensor) -> torch.Tensor:
-        with torch.backends.cudnn.flags(enabled=False):
+        cudnn_context = (
+            torch.backends.cudnn.flags(enabled=False)
+            if encoded_frames.is_cuda else nullcontext()
+        )
+        with cudnn_context:
             emb = self.quantizer.out_proj(encoded_frames)
             return self.decoder(emb)
 

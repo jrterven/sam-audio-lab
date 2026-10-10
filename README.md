@@ -1,152 +1,146 @@
-<div align="center">
+# SAM Audio Lab
 
-# SAM-Audio
+**Encuentra el sonido. Separa el resto.** Una interfaz web local, en español,
+para experimentar con [SAM Audio de Meta](https://github.com/facebookresearch/sam-audio).
+Carga audio o video, indica qué quieres escuchar y compara Small, Base y Large.
 
-[![arXiv](https://img.shields.io/badge/arXiv-2512.18099-b31b1b.svg)](https://arxiv.org/abs/2512.18099)
-![CI](https://github.com/facebookresearch/sam-audio/actions/workflows/ci.yaml/badge.svg)
-[![Hugging Face](https://img.shields.io/badge/HuggingFace-Collection-orange?logo=huggingface)](https://huggingface.co/collections/facebook/sam-audio)
+[![CI](https://github.com/jrterven/sam-audio-lab/actions/workflows/ci.yaml/badge.svg)](https://github.com/jrterven/sam-audio-lab/actions/workflows/ci.yaml)
+[![Licencia SAM](https://img.shields.io/badge/licencia-SAM-blue)](LICENSE)
 
-![model_image](assets/sam_audio_main_model.png)
+[Instalación](docs/INSTALLATION.md) · [Cómo usarlo](LAB.md) ·
+[Solución de problemas](docs/TROUBLESHOOTING.md) · [Arquitectura](docs/ARCHITECTURE.md)
 
-</div>
+![SAM Audio Lab: máscara de un objeto, regiones temporales y comparación de resultados](docs/assets/sam-audio-lab.jpg)
 
-Segment Anything Model for Audio [[**Blog**](https://ai.meta.com/blog/sam-audio/)] [[**Paper**](https://ai.meta.com/research/publications/sam-audio-segment-anything-in-audio/)] [[**Demo**](https://aidemos.meta.com/segment-anything/editor/segment-audio)]
+## Qué puedes hacer
 
-SAM-Audio is a foundation model for isolating any sound in audio using text, visual, or temporal prompts. It can separate specific sounds from complex audio mixtures based on natural language descriptions, visual cues from video, or time spans.
+- **Prompts de texto:** `man speaking`, `dog barking`, `guitar` o tu propia descripción.
+- **Regiones temporales:** dibuja, mueve y ajusta intervalos donde el sonido está
+  presente (+) o ausente (−). Son referencias; el recorte se controla por separado.
+- **Objetos del video:** encuentra objetos por texto, elige una instancia, usa clics
+  positivos/negativos y corrige su seguimiento en otros fotogramas.
+- **Comparación manual:** selecciona Small, Base o Large; duplica una prueba desde
+  el historial para repetir sus entradas con otro modelo.
+- **Escucha sincronizada:** cambia entre Original, Aislado y Residual conservando
+  la posición. Exporta WAV o el fragmento de video en MP4 con la pista elegida.
+- **Historial persistente:** conserva prompts, máscaras, modelo, semilla,
+  revisiones y tiempos. La aplicación permite cancelar trabajos y recuperarse.
 
-SAM-Audio and the Judge model crucially rely on [Perception-Encoder Audio-Visual (PE-AV)](https://huggingface.co/facebook/pe-av-large), which you can read more about [here](https://ai.meta.com/research/publications/pushing-the-frontier-of-audiovisual-perception-with-large-scale-multimodal-correspondence-learning/)
+Los medios se procesan en tu computadora. Se necesita Internet para instalar
+dependencias y descargar modelos desde Hugging Face; los archivos cargados no se
+envían a un servicio de inferencia. El servidor escucha solo en `127.0.0.1`.
 
-## Setup
+## Plataformas
 
-**Requirements:**
-- Python >= 3.11
-- CUDA-compatible GPU (recommended)
+| Sistema | Ejecución | Estado de validación |
+| --- | --- | --- |
+| macOS con Apple Silicon | Metal / MPS, float32 | Small, Base, Large y SAM 3 visual probados en M4 Max, 128 GB |
+| Linux | NVIDIA CUDA si PyTorch la detecta; CPU como alternativa | Instalación documentada; inferencia GPU pendiente de validar en hardware Linux |
+| Windows 11 / Windows 10 compatible con WSL2 | Ubuntu dentro de WSL2; CUDA o CPU | Instalación documentada; pendiente de validar en Windows |
+| Mac Intel | CPU, sujeto a disponibilidad de paquetes | No validado; no es la plataforma recomendada |
 
-Install dependencies:
+**Windows nativo no está soportado por el supervisor actual. Usa WSL2.**
+No se ha establecido un mínimo garantizado de RAM/VRAM. Empieza con Small y un clip
+de 5 segundos. Los checkpoints ocupan aproximadamente 4.75 GiB (Small),
+7.19 GiB (Base) y 13.84 GiB (Large), sin contar encoders, SAM 3 ni los entornos.
+
+## Instalar
+
+Requisitos: Git, Conda (Miniforge, Miniconda o Anaconda), Node.js 22.12+ con npm,
+FFmpeg y una cuenta de Hugging Face con acceso aprobado a los modelos.
 
 ```bash
-pip install .
+git clone https://github.com/jrterven/sam-audio-lab.git
+cd sam-audio-lab
 ```
 
-## Usage
+Continúa con la guía de tu sistema:
 
-⚠️ Before using SAM Audio, please request access to the checkpoints on the SAM Audio
-Hugging Face [repo](https://huggingface.co/facebook/sam-audio-large). Once accepted, you
-need to be authenticated to download the checkpoints. You can do this by running
-the following [steps](https://huggingface.co/docs/huggingface_hub/en/quick-start#authentication)
-(e.g. `hf auth login` after generating an access token.)
+- [macOS / Apple Silicon](docs/INSTALLATION.md#macos-con-apple-silicon)
+- [Linux / NVIDIA o CPU](docs/INSTALLATION.md#linux)
+- [Windows / WSL2](docs/INSTALLATION.md#windows-con-wsl2)
 
-### Basic Text Prompting
+La guía crea dos entornos: **`sam3`** para audio/API (Python 3.11, Transformers 4)
+y **`sam3-vision`** para segmentación visual (Python 3.12, Transformers 5).
+No se deben combinar. El entorno visual es opcional para texto y regiones.
 
-```python
-from sam_audio import SAMAudio, SAMAudioProcessor
-import torchaudio
-import torch
+## Correr la aplicación
 
-model = SAMAudio.from_pretrained("facebook/sam-audio-large")
-processor = SAMAudioProcessor.from_pretrained("facebook/sam-audio-large")
-model = model.eval().cuda()
+Una vez instalada, desde la raíz del repositorio:
 
-file = "<audio file>" # audio file path or torch tensor
-description = "<description>"
-
-batch = processor(
-    audios=[file],
-    descriptions=[description],
-).to("cuda")
-
-with torch.inference_mode():
-    # NOTE: `predict_spans` and `reranking_candidates` have a large impact on performance.
-    # Setting `predict_span=True` and `reranking_candidates=8` will give you better results at the cost of
-    # latency and memory. See the "Span Prediction" section below for more details
-   result = model.separate(batch, predict_spans=False, reranking_candidates=1)
-
-# Save separated audio
-sample_rate = processor.audio_sampling_rate
-torchaudio.save("target.wav", result.target.cpu(), sample_rate)      # The isolated sound
-torchaudio.save("residual.wav", result.residual.cpu(), sample_rate)  # Everything else
+```bash
+conda activate sam3
+python -m lab.doctor
+python run_lab.py
 ```
 
-### Prompting Methods
+Abre **http://127.0.0.1:8765/**. Detén el servidor con `Ctrl+C` en la terminal.
+También puedes iniciarlo sin activar el entorno:
 
-SAM-Audio supports three types of prompts:
-
-1. **Text Prompting**: Describe the sound you want to isolate using natural language. To match training, please use lowercase noun-phrase/verb-phrase (NP/VP) format for text (for example instead of "Thunder can be heard in the background" use "thunder").
-   ```python
-   processor(audios=[audio], descriptions=["man speaking"])
-   ```
-
-2. **Visual Prompting**: Use video frames and masks to isolate sounds associated with visual objects
-   ```python
-   processor(audios=[video], descriptions=[""], masked_videos=processor.mask_videos([frames], [mask]))
-   ```
-
-3. **Span Prompting**: Specify time ranges where the target sound occurs
-   ```python
-   processor(audios=[audio], descriptions=["car honking"], anchors=[[["+", 6.3, 7.0]]])
-   ```
-
-See the [examples](examples) directory for more detailed examples
-
-### Span Prediction (Optional for Text Prompting)
-
-We also provide support for automatically predicting the spans based on the text description, which is especially helpful for separating non-ambience sound events.  You can enable this by adding `predict_spans=True` in your call to `separate`
-
-```python
-with torch.inference_mode()
-   outputs = model.separate(batch, predict_spans=True)
-
-# To further improve performance (at the expense of latency), you can add candidate re-ranking
-with torch.inference_mode():
-   outputs = model.separate(batch, predict_spans=True, reranking_candidates=8)
+```bash
+conda run --no-capture-output -n sam3 python run_lab.py
 ```
 
-### Re-Ranking
+`python run_lab.py --build` recompila la interfaz; `--port 8766` usa otro puerto.
+Los modelos se descargan al usarlos por primera vez. El dropdown indica si el
+checkpoint está en caché. Tener el checkpoint no garantiza que todos sus encoders
+ya estén descargados.
 
-We provide the following models to assess the quality of the separated audio:
+## Primera prueba
 
-- [CLAP](https://github.com/LAION-AI/CLAP): measures the similarity between the target audio and text description
-- [Judge](https://huggingface.co/facebook/sam-audio-judge): measures the overall separation quality across 3 axes: precision, recall, and faithfulness (see the [model card](https://huggingface.co/facebook/sam-audio-judge#output-format) for more details)
-- [ImageBind](https://github.com/facebookresearch/ImageBind): for visual prompting, we measure the imagebind embedding similarity between the separated audio and the masked input video
+1. Usa el botón de ejemplo para cargar `office.mp4`, o carga tu propio archivo.
+2. Selecciona un fragmento de 0 a 5 segundos y prepáralo.
+3. Escribe `man speaking`, selecciona **Small** y pulsa **Separar sonido**.
+4. Escucha Aislado y Residual; descarga el WAV.
+5. Duplica la prueba y selecciona Base o Large para comparar.
 
-We provide support for generating multiple candidates (by setting `reranking_candidates=<k>` in your call to `separate`), which will generate `k` audios, and choose the best one based on the ranking models mentioned above
+Para probar visión, busca `person`, elige una máscara, pulsa **Seguir objeto en
+el clip** y revisa el resultado antes de separar. [Guía completa de uso](LAB.md).
 
-# Models
+## Límites y resultados medidos
 
-Below is a table of each of the models we released along with their overall subjective evaluation scores
+Se aceptan archivos largos, procesando recortes de **hasta 30 segundos**. Cada
+ejecución separa una fuente/objeto con audio mono a 48 kHz, precisión float32,
+semilla 42 y una candidata. No incluye reranking ni predicción automática de
+regiones. La máscara visual guía la separación; no garantiza aislamiento perfecto.
 
-| Model    | General SFX | Speech | Speaker | Music | Instr(wild) | Instr(pro) |
-|----------|-------------|--------|---------|-------|-------------|------------|
-| [`sam-audio-small`](https://huggingface.co/facebook/sam-audio-small) | 3.62        | 3.99   | 3.12    | 4.11  | 3.56        | 4.24       |
-| [`sam-audio-base`](https://huggingface.co/facebook/sam-audio-base)   | 3.28        | 4.25   | 3.57    | 3.87  | 3.66        | 4.27       |
-| [`sam-audio-large`](https://huggingface.co/facebook/sam-audio-large) | 3.50        | 4.03   | 3.60    | 4.22  | 3.66        | 4.49       |
+Mediciones individuales en M4 Max, 128 GB (9 de octubre de 2026):
 
-We additional release another variant (in each size) that is better specifically on correctness of target sound as well as visual prompting:
-- [`sam-audio-small-tv`](https://huggingface.co/facebook/sam-audio-small-tv)
-- [`sam-audio-base-tv`](https://huggingface.co/facebook/sam-audio-base-tv)
-- [`sam-audio-large-tv`](https://huggingface.co/facebook/sam-audio-large-tv)
+| Prueba | Clip | Separación de audio |
+| --- | ---: | ---: |
+| Small, texto + regiones + objeto | 5 s | 6.45 s |
+| Base, texto | 5 s | 13.65 s |
+| Large, texto | 5 s | 12.78 s |
+| Small, texto + regiones, recorte desde el segundo 2 | 30 s | 24.63 s |
 
-## Evaluation
+Estas mediciones no son un benchmark controlado ni una evaluación de calidad.
+El seguimiento visual de 5 s tardó **379.53 s adicionales**, y el encoder visual
+de audio, 29.20 s. El factor de tiempo real divide únicamente el tiempo de
+separación por la duración del audio. [Detalles de validación](LAB.md#validación-realizada-en-esta-mac).
 
-See the [eval](eval) directory for instructions and scripts to reproduce results from the paper
+## Datos y documentación
 
-## Contributing
+Los proyectos, medios y resultados están en `.lab-data/`; los checkpoints usan la
+caché de Hugging Face. Ninguno se incluye en Git. Conserva **todo** `.lab-data/`
+para respaldar el historial, deteniendo antes el servidor.
 
-See [contributing](CONTRIBUTING.md) and [code of conduct](CODE_OF_CONDUCT.md) for more information.
+- [Instalación, credenciales y configuración](docs/INSTALLATION.md)
+- [Uso, tiempos e inferencias reales](LAB.md)
+- [Diagnóstico y errores frecuentes](docs/TROUBLESHOOTING.md)
+- [API, procesos y almacenamiento](docs/ARCHITECTURE.md)
+- [Contribuir y ejecutar pruebas](CONTRIBUTING.md)
+- [Registro del entorno Mac original](MACOS.md)
+- [Documentación original de SAM Audio](docs/upstream/README.md)
 
-## License
+## Autoría y licencia
 
-This project is licensed under the SAM License - see the [LICENSE](LICENSE) file for details.
+SAM Audio Lab es una adaptación independiente mantenida por
+[Juan Terven](https://github.com/jrterven); no es una aplicación oficial de Meta.
+Parte de [facebookresearch/sam-audio](https://github.com/facebookresearch/sam-audio),
+commit `bb4c6999d2677c7402360e426afc01ddfad6dce0`, y conserva su historial y avisos.
 
-## Citing SAM Audio
-
-If you use SAM Audio in your research, please use the following BibTex entry:
-
-```bibtex
-@article{shi2025samaudio,
-    title={SAM Audio: Segment Anything in Audio},
-    author={Bowen Shi and Andros Tjandra and John Hoffman and Helin Wang and Yi-Chiao Wu and Luya Gao and Julius Richter and Matt Le and Apoorv Vyas and Sanyuan Chen and Christoph Feichtenhofer and Piotr Doll{\'a}r and Wei-Ning Hsu and Ann Lee},
-    year={2025},
-    url={https://arxiv.org/abs/2512.18099}
-}
-```
+El código derivado se distribuye bajo la **[SAM License](LICENSE)** original.
+Los modelos y dependencias conservan sus propias licencias y condiciones de
+acceso; Perception Models incluye condiciones no comerciales. Consulta
+[NOTICE.md](NOTICE.md) y las licencias enlazadas antes de usarlo en otro proyecto.
+Los pesos no se redistribuyen en este repositorio.

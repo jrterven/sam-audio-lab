@@ -2,43 +2,45 @@ name: CI
 on:
   push:
   pull_request:
-
-env:
-  CACHE_NUMBER: 0
-
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  build:
-    runs-on: 32-core-ubuntu
+  frontend:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: mamba-org/setup-micromamba@v1.8.1
+      - uses: actions/setup-node@v4
         with:
-          environment-name: sam-audio
-          init-shell: bash
-          create-args: >-
-            python=3.11
-            pip=24.2
-            ruff==
-
-      - uses: actions/cache@v4
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm --prefix web ci
+      - run: npm --prefix web run build
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SAM_LAB_DEVICE: cpu
+      SAM_LAB_DATA: /tmp/sam-audio-lab-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          path: /home/runner/micromamba/envs/sam-audio
-          key: ${{ hashFiles('pyproject.toml') }}-${{ env.CACHE_NUMBER }}
-        id: cache
-
-      - name: Update environment
-        shell: bash -l {0}
+          python-version: '3.11'
+          cache: pip
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install CPU runtime
         run: |
-          pip install .
-        if: steps.cache.outputs.cache-hit != 'true'
-
-      - name: Check formatting
-        shell: bash -l {0}
-        run: |
-          ruff format --check .
-
-      - name: Lint
-        shell: bash -l {0}
-        run: |
-          ruff check .
+          python -m pip install torch==2.14.1 torchvision==0.29.1 torchaudio==2.11.0 torchcodec==0.17.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements-audio.txt -r requirements-lab-dev.txt
+          python -m pip install --no-deps 'dacvae @ git+https://github.com/facebookresearch/dacvae.git@414c20785fc3a28373073ea8ef7a1316eeeaca6e'
+          python -m pip install --no-deps 'perception-models @ git+https://github.com/facebookresearch/perception_models.git@e72b6810b1133e1c879f2cc965d276eb73803f1f'
+          python -m pip install --no-deps -e .
+      - name: Check imports and media decoding without weights
+        run: python -m lab.doctor --audio-only
+      - name: Test backend without checkpoints
+        run: python -m pytest tests/test_lab.py tests/test_portability.py -q

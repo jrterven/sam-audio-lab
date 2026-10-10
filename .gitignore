@@ -6,3 +6,16 @@ build
 dist
 .checkpoints
 .ipynb_checkpoints
+.deps/
+.cache/
+outputs/
+.lab-data/
+web/node_modules/
+.pytest_cache/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.venv/
+.DS_Store
+*.log

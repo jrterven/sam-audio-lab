@@ -1,0 +1,16 @@
+# Dependencies of the Lab's inference path. Install PyTorch/TorchCodec separately
+# for the target platform, then pinned DACVAE/Perception Models with --no-deps.
+# See docs/INSTALLATION.md. The full macOS environment is recorded separately.
+argbind==0.3.9
+descript-audiotools==0.7.2
+einops==0.8.2
+numpy==2.4.6
+pillow==12.3.0
+pydub==0.25.1
+soundfile==0.14.0
+scipy==1.17.1
+sentencepiece==0.2.2
+timm==1.0.30
+torchdiffeq==0.2.5
+transformers==4.57.6
+huggingface_hub==0.36.2

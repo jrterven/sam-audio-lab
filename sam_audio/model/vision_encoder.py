@@ -58,14 +58,16 @@ class VisionEncoder(torch.nn.Module, metaclass=ABCMeta):
         """
         result = []
         for video in videos:
-            video = self.transform(video)
             if self.batch_size > 0 and video.size(0) > self.batch_size:
                 res = []
                 for i in range(0, video.size(0), self.batch_size):
-                    res.append(self.encode(video[i : i + self.batch_size]))
+                    frames = self.transform(video[i : i + self.batch_size])
+                    frames = frames.to(next(self.parameters()).device)
+                    res.append(self.encode(frames))
                 result.append(torch.cat(res, dim=0))
             else:
-                result.append(self.encode(video))
+                frames = self.transform(video).to(next(self.parameters()).device)
+                result.append(self.encode(frames))
         return pad_sequence(result, batch_first=True, padding_value=0.0)
 
     @abstractmethod

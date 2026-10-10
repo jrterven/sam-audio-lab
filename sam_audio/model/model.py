@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import torch
-from core.audio_visual_encoder import PEAudioFrame, PEAudioFrameTransform
 from torchdiffeq import odeint
 
 from sam_audio.model.align import AlignModalities
@@ -94,6 +93,8 @@ class SAMAudio(BaseModel):
         self.visual_ranker = create_ranker(cfg.visual_ranker)
         self.text_ranker = create_ranker(cfg.text_ranker)
         if cfg.span_predictor is not None:
+            from core.audio_visual_encoder import PEAudioFrame, PEAudioFrameTransform
+
             self.span_predictor = PEAudioFrame.from_config(
                 cfg.span_predictor, pretrained=True
             )
