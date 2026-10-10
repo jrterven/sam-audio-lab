@@ -182,6 +182,11 @@ cuenta con la que iniciarás sesión:
 - [SAM Audio Large](https://huggingface.co/facebook/sam-audio-large)
 - [SAM 3 visual](https://huggingface.co/facebook/sam3), para objetos de video
 
+SAM Audio y SAM 3 usan la **SAM License** de Meta. El repositorio incluye
+[el acuerdo](../LICENSE), [la copia oficial de SAM 3](../licenses/SAM3-LICENSE)
+y [las atribuciones de sus componentes](../NOTICE.md). Instalar Transformers
+no concede por sí mismo acceso a los pesos de SAM 3.
+
 El acceso a SAM Audio no implica el de SAM 3 visual. Crea un token con permiso
 de lectura de los repositorios autorizados e inicia sesión:
 

@@ -1,16 +1,29 @@
-# SAM Audio Lab
+<h1 align="center">SAM Audio Lab</h1>
 
-Interfaz web local, en español,
-para experimentar con [SAM Audio de Meta](https://github.com/facebookresearch/sam-audio).
-Carga audio o video, indica qué quieres escuchar y compara Small, Base y Large.
+<p align="center">
+  Separa sonidos de audio y video con texto, regiones y objetos.<br>
+  Interfaz web local en español · SAM Audio Small, Base y Large · SAM 3 visual
+</p>
 
-[![CI](https://github.com/jrterven/sam-audio-lab/actions/workflows/ci.yaml/badge.svg)](https://github.com/jrterven/sam-audio-lab/actions/workflows/ci.yaml)
-[![Licencia SAM](https://img.shields.io/badge/licencia-SAM-blue)](LICENSE)
+<p align="center">
+  <a href="https://github.com/jrterven/sam-audio-lab/actions/workflows/ci.yaml"><img src="https://github.com/jrterven/sam-audio-lab/actions/workflows/ci.yaml/badge.svg" alt="Pruebas y compilación"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Licencia-SAM-345fe5" alt="Licencia SAM"></a>
+  <a href="docs/INSTALLATION.md"><img src="https://img.shields.io/badge/macOS-Metal-345fe5" alt="macOS con Metal"></a>
+  <a href="docs/INSTALLATION.md#linux"><img src="https://img.shields.io/badge/Linux%20%2F%20WSL2-Gu%C3%ADas-7187b0" alt="Guías para Linux y WSL2"></a>
+</p>
 
-[Instalación](docs/INSTALLATION.md) · [Cómo usarlo](LAB.md) ·
-[Solución de problemas](docs/TROUBLESHOOTING.md) · [Arquitectura](docs/ARCHITECTURE.md)
+<p align="center">
+  <a href="#instalar">Instalar</a> ·
+  <a href="#correr-la-aplicación">Correr</a> ·
+  <a href="#capturas">Capturas</a> ·
+  <a href="LAB.md">Uso</a> ·
+  <a href="docs/TROUBLESHOOTING.md">Ayuda</a> ·
+  <a href="#autoría-y-licencia">Licencia</a>
+</p>
 
-![SAM Audio Lab: máscara de un objeto, regiones temporales y comparación de resultados](docs/assets/sam-audio-lab.jpg)
+![Selección de una persona con SAM 3 y regiones positivas y negativas en SAM Audio Lab](docs/assets/sam-audio-lab.jpg)
+
+<p align="center"><sub>Captura real con el video de ejemplo: máscara de SAM 3, seguimiento y regiones temporales.</sub></p>
 
 ## Qué puedes hacer
 
@@ -29,6 +42,29 @@ Carga audio o video, indica qué quieres escuchar y compara Small, Base y Large.
 Los medios se procesan en tu computadora. Se necesita Internet para instalar
 dependencias y descargar modelos desde Hugging Face; los archivos cargados no se
 envían a un servicio de inferencia. El servidor escucha solo en `127.0.0.1`.
+
+## Capturas
+
+<details>
+<summary><strong>Texto y regiones</strong> · describe el sonido y marca dónde aparece</summary>
+
+![Prompt woman speaking con regiones positiva y negativa, recorte independiente y selector de modelo](docs/assets/text-and-regions.jpg)
+
+Texto, regiones y guía visual se pueden combinar en la misma ejecución.
+El recorte superior determina la duración de la salida; las regiones inferiores
+indican presencia o ausencia del sonido.
+
+</details>
+
+<details open>
+<summary><strong>Resultados e historial</strong> · escucha, compara y exporta</summary>
+
+![Resultado con tiempos por etapa, exportaciones WAV y MP4 e historial de pruebas con Small, Base y Large](docs/assets/results-and-history.jpg)
+
+Los tiempos corresponden a ejecuciones reales del ejemplo `office.mp4` y a una
+copia repetida para la prueba de 30 segundos. No son un benchmark controlado.
+
+</details>
 
 ## Plataformas
 
@@ -56,9 +92,9 @@ cd sam-audio-lab
 
 Continúa con la guía de tu sistema:
 
-- [macOS / Apple Silicon](docs/INSTALLATION.md#macos-con-apple-silicon)
-- [Linux / NVIDIA o CPU](docs/INSTALLATION.md#linux)
-- [Windows / WSL2](docs/INSTALLATION.md#windows-con-wsl2)
+| macOS | Linux | Windows |
+| :---: | :---: | :---: |
+| [Apple Silicon / Metal](docs/INSTALLATION.md#macos-con-apple-silicon) | [NVIDIA CUDA o CPU](docs/INSTALLATION.md#linux) | [Ubuntu en WSL2](docs/INSTALLATION.md#windows-con-wsl2) |
 
 La guía crea dos entornos: **`sam3`** para audio/API (Python 3.11, Transformers 4)
 y **`sam3-vision`** para segmentación visual (Python 3.12, Transformers 5).
@@ -74,7 +110,7 @@ python -m lab.doctor
 python run_lab.py
 ```
 
-Abre **http://127.0.0.1:8765/**. Detén el servidor con `Ctrl+C` en la terminal.
+Abre **[127.0.0.1:8765](http://127.0.0.1:8765/)**. Detén el servidor con `Ctrl+C` en la terminal.
 También puedes iniciarlo sin activar el entorno:
 
 ```bash
@@ -139,8 +175,13 @@ SAM Audio Lab es una adaptación independiente mantenida por
 Parte de [facebookresearch/sam-audio](https://github.com/facebookresearch/sam-audio),
 commit `bb4c6999d2677c7402360e426afc01ddfad6dce0`, y conserva su historial y avisos.
 
-El código derivado se distribuye bajo la **[SAM License](LICENSE)** original.
-Los modelos y dependencias conservan sus propias licencias y condiciones de
-acceso; Perception Models incluye condiciones no comerciales. Consulta
-[NOTICE.md](NOTICE.md) y las licencias enlazadas antes de usarlo en otro proyecto.
-Los pesos no se redistribuyen en este repositorio.
+El código derivado y las aportaciones del Lab se distribuyen bajo la
+**[SAM License](LICENSE)** de Meta, conservada sin cambios. **SAM 3 también usa
+SAM License**: se incluye una [copia oficial](licenses/SAM3-LICENSE) con su
+[procedencia y revisión](licenses/README.md).
+
+La implementación de SAM 3 en Transformers, Perception Encoder y DACVAE tienen
+licencias propias; no cambian la licencia de los modelos de Meta. Los pesos se
+descargan desde los repositorios oficiales de Hugging Face y no se redistribuyen
+aquí. Consulta **[NOTICE.md](NOTICE.md)** para la atribución, el alcance de cada
+licencia y las condiciones de redistribución.
