@@ -1,6 +1,6 @@
 # SAM Audio Lab
 
-**Encuentra el sonido. Separa el resto.** Una interfaz web local, en español,
+Interfaz web local, en español,
 para experimentar con [SAM Audio de Meta](https://github.com/facebookresearch/sam-audio).
 Carga audio o video, indica qué quieres escuchar y compara Small, Base y Large.
 

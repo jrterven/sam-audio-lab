@@ -80,10 +80,19 @@ export default function App() {
   const selected = media.find((m) => m.id === draft.mediaId),
     clipJob = jobs.find((j) => j.id === draft.clipId),
     result = jobs.find((j) => j.id === draft.resultId)?.result,
-    clip = clipJob?.status === "done" ? clipJob.result : result ? {
-      audio: result.files.original, video: result.video, duration: result.duration,
-      peaks: result.peaks, width: result.video_width, height: result.video_height,
-    } : null;
+    clip =
+      clipJob?.status === "done"
+        ? clipJob.result
+        : result
+          ? {
+              audio: result.files.original,
+              video: result.video,
+              duration: result.duration,
+              peaks: result.peaks,
+              width: result.video_width,
+              height: result.video_height,
+            }
+          : null;
   const videoWidth =
       clip?.width || result?.video_width || selected?.width || 16,
     videoHeight = clip?.height || result?.video_height || selected?.height || 9;
@@ -433,29 +442,9 @@ export default function App() {
           <span className="brand-mark">
             <AudioLines size={24} />
           </span>
-          <div>
-            SAM Audio <span className="brand-light">Lab</span>
-            <span className="brand-caption">
-              UN LABORATORIO PARA ESCUCHAR DIFERENTE
-            </span>
-          </div>
-        </div>
-        <div className="header-right">
-          <span className="local-badge">
-            <i />
-            Procesamiento local
-          </span>
-          <span className="version">EXPERIMENTAL / 01</span>
-        </div>
-      </header>
-      <div className="workspace-heading">
-        <div>
-          <span className="eyebrow">TU ESPACIO DE EXPERIMENTACIÓN</span>
           <h1>
-            Encuentra el sonido.
-            <br className="mobile-break" /> Separa el resto.
+            SAM Audio <span className="brand-light">Lab</span>
           </h1>
-          <p>Texto, tiempo o imagen. Tú eliges cómo aislarlo.</p>
         </div>
         <button
           className="button secondary"
@@ -475,7 +464,7 @@ export default function App() {
             e.target.value = "";
           }}
         />
-      </div>
+      </header>
       {error && (
         <div className="alert" role="alert">
           <span>{error}</span>
@@ -487,12 +476,7 @@ export default function App() {
       <main className="editor-grid">
         <section className="workspace panel">
           <div className="panel-bar">
-            <div className="panel-label">
-              <span className="number">01</span> Fuente{" "}
-              <span className="file-name">
-                {selected?.name || "Sin archivo"}
-              </span>
-            </div>
+            <div className="panel-label">Archivo</div>
             {selected && (
               <select
                 aria-label="Archivo actual"
@@ -519,28 +503,11 @@ export default function App() {
                 if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]);
               }}
             >
-              <div className="ambient-wave">
-                {Array.from({ length: 45 }, (_, i) => (
-                  <i
-                    key={i}
-                    style={{
-                      height:
-                        14 +
-                        Math.sin(i * 0.6) ** 2 * 50 +
-                        Math.sin(i * 0.3) ** 2 * 30,
-                    }}
-                  />
-                ))}
-              </div>
               <div className="upload-symbol">
                 <Upload size={24} />
               </div>
-              <h2>Todo empieza con un sonido</h2>
-              <p>
-                Arrastra tu audio o video aquí.
-                <br />
-                Selecciona hasta 30 segundos para experimentar.
-              </p>
+              <h2>Carga un audio o video</h2>
+              <p>Arrastra un archivo aquí.</p>
               <button
                 className="button primary"
                 onClick={() => fileInput.current?.click()}
@@ -557,7 +524,7 @@ export default function App() {
                   })
                 }
               >
-                O probar con un video de ejemplo
+                Usar video de ejemplo
               </button>
               <span className="format-hint">
                 WAV · MP3 · FLAC · MP4 · MOV · WEBM
@@ -567,7 +534,7 @@ export default function App() {
             <>
               <div className="crop-bar">
                 <span>
-                  <SlidersHorizontal size={14} /> Fragmento a procesar
+                  <SlidersHorizontal size={14} /> Fragmento · máx. 30 s
                 </span>
                 <label>
                   Desde{" "}
@@ -693,8 +660,8 @@ export default function App() {
                             )
                           ? selected.error
                           : clip
-                            ? "Tu sonido, en primer plano."
-                            : "Prepara el fragmento para comenzar."}
+                            ? "Audio listo"
+                            : "Prepara el fragmento."}
                     </p>
                   </div>
                 )}
@@ -746,7 +713,7 @@ export default function App() {
                     <Volume2 size={16} className="volume-icon" />
                   </div>
                   <div className="timeline-toolbar">
-                    <span>REGIONES DE REFERENCIA</span>
+                    <span>Regiones</span>
                     <div>
                       <button
                         aria-label="Mover cursor"
@@ -783,9 +750,8 @@ export default function App() {
                   />
                   <p className="timeline-help">
                     {tool
-                      ? "Arrastra sobre la onda para marcar una región."
-                      : "Marca dónde aparece o no aparece el sonido que buscas."}{" "}
-                    Las regiones guían la separación; no recortan la salida.
+                      ? "Arrastra para marcar una región."
+                      : "Las regiones guían la separación; no recortan el clip."}
                   </p>
                   {!!draft.regions.length && (
                     <div className="region-list">
@@ -822,9 +788,7 @@ export default function App() {
         </section>
         <aside className="controls panel">
           <div className="panel-bar">
-            <div className="panel-label">
-              <span className="number">02</span> Define tu sonido
-            </div>
+            <div className="panel-label">Separación</div>
             <SlidersHorizontal size={16} />
           </div>
           <div className="controls-body">
@@ -833,31 +797,27 @@ export default function App() {
                 className={tab === "text" ? "active" : ""}
                 onClick={() => setTab("text")}
               >
-                <AudioLines size={15} /> Texto y tiempo
+                <AudioLines size={15} /> Texto
               </button>
               <button
                 className={tab === "visual" ? "active" : ""}
                 onClick={() => setTab("visual")}
               >
-                <Scan size={15} /> Objeto visual
+                <Scan size={15} /> Objeto de video
               </button>
             </div>
             {tab === "text" ? (
               <div className="prompt-section">
                 <label className="field-label" htmlFor="prompt">
-                  ¿Qué quieres escuchar?
+                  Sonido a aislar
                 </label>
                 <textarea
                   id="prompt"
                   value={draft.prompt}
                   onChange={(e) => edit({ prompt: e.target.value })}
-                  placeholder="Describe el sonido que quieres aislar…"
+                  placeholder="Ej. man speaking"
                   rows={4}
                 />
-                <p className="field-hint">
-                  Una descripción breve y específica. Prueba con ejemplos en
-                  inglés.
-                </p>
                 <div className="suggestions">
                   {["man speaking", "dog barking", "guitar"].map((s) => (
                     <button onClick={() => edit({ prompt: s })} key={s}>
@@ -866,23 +826,11 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-                <div className="tip-card">
-                  <span className="tip-icon">
-                    <Plus size={17} />
-                  </span>
-                  <div>
-                    <strong>Afina con la línea del tiempo</strong>
-                    <p>
-                      Marca tramos donde el sonido está presente o ausente para
-                      darle más contexto al modelo.
-                    </p>
-                  </div>
-                </div>
               </div>
             ) : (
               <div className="visual-controls">
                 <label className="field-label" htmlFor="visual-prompt">
-                  Encuentra un objeto en este fotograma
+                  Objeto a aislar
                 </label>
                 <input
                   id="visual-prompt"
@@ -928,8 +876,7 @@ export default function App() {
                   </button>
                 </div>
                 <p className="field-hint">
-                  Pausa el video y haz clic sobre el objeto. Puedes corregirlo
-                  en cualquier fotograma.
+                  Pausa el video para añadir o corregir clics.
                 </p>
                 <div className="frame-nav">
                   <button
@@ -1025,9 +972,7 @@ export default function App() {
               </div>
             )}
             <div className="model-section">
-              <div className="field-label">
-                Modelo de separación <span className="badge">SAM AUDIO</span>
-              </div>
+              <div className="field-label">Modelo</div>
               <div className="model-select">
                 <select
                   aria-label="Modelo SAM Audio"
@@ -1046,18 +991,6 @@ export default function App() {
                   ))}
                 </select>
                 <ChevronDown size={15} />
-              </div>
-              <p className="field-hint">
-                {draft.model === "small"
-                  ? "El punto de partida más ligero."
-                  : draft.model === "base"
-                    ? "Una variante intermedia para comparar."
-                    : "La variante de mayor tamaño."}{" "}
-                Ejecuta uno a la vez.
-              </p>
-              <div className="settings-line">
-                <span>48 kHz · mono</span>
-                <span>Semilla 42</span>
               </div>
             </div>
             <button
@@ -1078,11 +1011,16 @@ export default function App() {
               ) : (
                 <AudioLines size={18} />
               )}{" "}
-              Separar sonido <ArrowUpRight size={17} />
+              Separar sonido
             </button>
-            {!busy && draft.annotations.length > 0 && tracking?.status !== "done" && (
-              <p className="field-hint">Completa el seguimiento o limpia la selección visual antes de separar.</p>
-            )}
+            {!busy &&
+              draft.annotations.length > 0 &&
+              tracking?.status !== "done" && (
+                <p className="field-hint">
+                  Completa el seguimiento o limpia la selección visual antes de
+                  separar.
+                </p>
+              )}
             {busy ? (
               <div className="job-status" aria-live="polite">
                 <div>
@@ -1111,12 +1049,7 @@ export default function App() {
                   />
                 </div>
               </div>
-            ) : (
-              <p className="privacy-note">
-                <span className="status-dot" /> Tus archivos permanecen en esta
-                computadora.
-              </p>
-            )}
+            ) : null}
             {lastProblem &&
               ["error", "interrupted"].includes(lastProblem.status) && (
                 <div className="inline-error" role="alert">
@@ -1133,7 +1066,7 @@ export default function App() {
               <Check size={18} />
             </span>
             <div>
-              <h3>Un sonido, en primer plano</h3>
+              <h3>Resultado</h3>
               <p>
                 {result.model.toUpperCase()} · {result.device.toUpperCase()} ·{" "}
                 {result.duration.toFixed(2)} s de audio
@@ -1143,27 +1076,32 @@ export default function App() {
               Metadatos <Download size={13} />
             </a>
           </div>
-          <div className="metrics">
-            {[
-              ["Inferencia", result.timings.separate],
-              ["Carga del modelo", result.timings.load],
-              ["Descarga / caché", result.timings.download],
-              ["Procesamiento visual", result.timings.visual],
-              ["Tiempo total", result.timings.total],
-            ].map(([label, value]) => (
-              <div key={String(label)}>
-                <span>{label}</span>
-                <strong>{seconds(value as number)}</strong>
+          <details className="run-details">
+            <summary>
+              <Clock3 size={14} /> Tiempos y detalles <ChevronDown size={14} />
+            </summary>
+            <div className="metrics">
+              {[
+                ["Inferencia", result.timings.separate],
+                ["Carga del modelo", result.timings.load],
+                ["Descarga / caché", result.timings.download],
+                ["Procesamiento visual", result.timings.visual],
+                ["Tiempo total", result.timings.total],
+              ].map(([label, value]) => (
+                <div key={String(label)}>
+                  <span>{label}</span>
+                  <strong>{seconds(value as number)}</strong>
+                </div>
+              ))}
+              <div>
+                <span>Tiempo real</span>
+                <strong>{result.rtf.toFixed(2)}×</strong>
               </div>
-            ))}
-            <div>
-              <span>Tiempo real</span>
-              <strong>{result.rtf.toFixed(2)}×</strong>
             </div>
-          </div>
+          </details>
           <div className="export-row">
             <span>
-              <Download size={15} /> Lleva tu resultado
+              <Download size={15} /> Descargar
             </span>
             <a
               className="button small secondary"
@@ -1201,10 +1139,9 @@ export default function App() {
       <section className="history-section">
         <div className="section-heading">
           <h2>
-            <History size={18} /> Tus experimentos{" "}
+            <History size={18} /> Historial{" "}
             <span>{runs.length.toString().padStart(2, "0")}</span>
           </h2>
-          <p>Guardados localmente, listos para volver a escuchar.</p>
         </div>
         {runs.length ? (
           <div className="history-table">
@@ -1254,18 +1191,10 @@ export default function App() {
         ) : (
           <div className="empty-history">
             <FolderOpen size={22} />
-            <p>Tu primera separación aparecerá aquí.</p>
-            <span>Cambia de modelo y compara tus resultados a tu ritmo.</span>
+            <p>Sin resultados todavía.</p>
           </div>
         )}
       </section>
-      <footer>
-        <span>
-          <AudioLines size={13} /> SAM Audio Lab
-        </span>
-        <span>HECHO PARA EXPLORAR, ESCUCHAR Y COMPARAR.</span>
-        <span>Powered by Meta SAM Audio</span>
-      </footer>
       <audio ref={setAudio} preload="auto" />
     </div>
   );

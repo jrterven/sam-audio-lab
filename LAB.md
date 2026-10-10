@@ -27,6 +27,7 @@ Abre http://127.0.0.1:8765. `python run_lab.py --build` recompila la interfaz;
    máscara al reproducir o avanzar fotogramas. Puedes añadir correcciones y repetir.
 5. Selecciona **Small**, **Base** o **Large** y pulsa **Separar sonido**.
 6. Alterna Original / Aislado / Residual, descarga WAV o exporta MP4.
+   Abre **Tiempos y detalles** para consultar las métricas de ejecución.
    **Duplicar** en el historial recupera los parámetros para probar otro modelo.
 
 Se envía el texto tal como se escribe; hay ejemplos en inglés, sin traducción ni

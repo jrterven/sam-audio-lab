@@ -30,6 +30,8 @@ export function Timeline({
     plugin = useRef<RegionsPlugin | null>(null);
   const callbacks = useRef({ onRegions, onSeek });
   callbacks.current = { onRegions, onSeek };
+  const drawingTool = useRef(tool);
+  drawingTool.current = tool;
   const loaded = useRef(false),
     writing = useRef(false),
     regionRef = useRef(regions);
@@ -42,9 +44,9 @@ export function Timeline({
     plugin.current = p;
     const w = WaveSurfer.create({
       container: container.current,
-      waveColor: "#56645b",
-      progressColor: "#b7ed8c",
-      cursorColor: "#eaf4e4",
+      waveColor: "#829ed0",
+      progressColor: "#2563eb",
+      cursorColor: "#1e3a8a",
       height: 104,
       barWidth: 2,
       barGap: 2,
@@ -58,19 +60,17 @@ export function Timeline({
     const publish = () => {
       if (loaded.current && !writing.current)
         callbacks.current.onRegions(
-          p
-            .getRegions()
-            .map((r) => ({
-              sign: r.content?.textContent === "−" ? "-" : "+",
-              start: r.start + offset,
-              end: r.end + offset,
-            })),
+          p.getRegions().map((r) => ({
+            sign: r.content?.textContent === "−" ? "-" : "+",
+            start: r.start + offset,
+            end: r.end + offset,
+          })),
         );
     };
     w.on("interaction", (t) => callbacks.current.onSeek(t));
     p.on("region-created", (r) => {
       if (writing.current) return;
-      r.setOptions({ content: r.color.includes("232") ? "−" : "+" });
+      r.setOptions({ content: drawingTool.current === "-" ? "−" : "+" });
       publish();
     });
     p.on("region-updated", publish);
@@ -85,7 +85,7 @@ export function Timeline({
           end: r.end - offset,
           content: r.sign === "-" ? "−" : "+",
           color:
-            r.sign === "+" ? "rgba(172,229,128,.20)" : "rgba(232,140,118,.23)",
+            r.sign === "+" ? "rgba(37,99,235,.18)" : "rgba(249,115,22,.20)",
           minLength: 0.04,
         });
       writing.current = false;
@@ -105,13 +105,11 @@ export function Timeline({
   useEffect(() => {
     const p = plugin.current;
     if (!p || !loaded.current) return;
-    const actual = p
-      .getRegions()
-      .map((r) => ({
-        sign: r.content?.textContent === "−" ? "-" : "+",
-        start: r.start + offset,
-        end: r.end + offset,
-      }));
+    const actual = p.getRegions().map((r) => ({
+      sign: r.content?.textContent === "−" ? "-" : "+",
+      start: r.start + offset,
+      end: r.end + offset,
+    }));
     if (JSON.stringify(actual) === JSON.stringify(regions)) return;
     writing.current = true;
     p.clearRegions();
@@ -120,8 +118,7 @@ export function Timeline({
         start: r.start - offset,
         end: r.end - offset,
         content: r.sign === "-" ? "−" : "+",
-        color:
-          r.sign === "+" ? "rgba(172,229,128,.20)" : "rgba(232,140,118,.23)",
+        color: r.sign === "+" ? "rgba(37,99,235,.18)" : "rgba(249,115,22,.20)",
         minLength: 0.04,
       });
     writing.current = false;
@@ -129,7 +126,7 @@ export function Timeline({
   useEffect(() => {
     if (tool && plugin.current)
       return plugin.current.enableDragSelection({
-        color: tool === "+" ? "rgba(172,229,128,.20)" : "rgba(232,140,118,.23)",
+        color: tool === "+" ? "rgba(37,99,235,.18)" : "rgba(249,115,22,.20)",
         minLength: 0.04,
       });
   }, [tool, duration, offset, media]);
