@@ -19,3 +19,5 @@ web/node_modules/
 .venv/
 .DS_Store
 *.log
+.playwright-cli/
+output/playwright/

@@ -81,6 +81,45 @@ def test_api_local_access_and_media_validation(tmp_path,monkeypatch):
     assert c.post('/api/vision/detect',json={'media_id':m['id'],'start':0,'end':5,'text':'person'}).status_code==422
 
 
+def test_full_original_playback_is_cached_seekable_and_independent_of_clips(tmp_path, monkeypatch):
+    import soundfile as sf
+    from fastapi.testclient import TestClient
+    from lab import api
+    for module in (media, store, api):
+        monkeypatch.setattr(module, 'DATA', tmp_path)
+    # A long stereo original must remain playable beyond the 30-second inference limit.
+    sample_rate = 24000
+    t = np.arange(int(sample_rate * 31.5)) / sample_rate
+    samples = np.stack([np.sin(2*np.pi*f*t)*.1 for f in (220, 880)], axis=-1)
+    source = tmp_path/'original.flac'
+    sf.write(source, samples, sample_rate)
+    m = store.save('media', dict(media.probe(source), status='ready', path='original.flac'))
+    client = TestClient(api.app)
+    url = f'/api/media/{m["id"]}/audio'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.headers['content-type'] == 'audio/mpeg'
+    preview = tmp_path/'media'/m['id']/'preview.mp3'
+    info = media.probe(preview)
+    assert abs(info['duration'] - 31.5) < .1
+    metadata = json.loads(media.command([media.FFPROBE, '-v', 'error', '-show_streams', '-of', 'json', str(preview)]))
+    assert metadata['streams'][0]['channels'] == 2
+    assert not (tmp_path/'clips').exists()
+    assert store.all_of('job') == []
+    original_bytes = source.read_bytes()
+    # Browsers request byte ranges when seeking. The second request reuses the cache.
+    def unexpected_encode(*args):
+        raise AssertionError('A cached preview must not be encoded again')
+    monkeypatch.setattr(media, 'command', unexpected_encode)
+    ranged = client.get(url, headers={'Range': 'bytes=10-109'})
+    assert ranged.status_code == 206
+    assert ranged.content == response.content[10:110]
+    assert source.read_bytes() == original_bytes
+    pending = store.save('media', {'status': 'importing'})
+    assert client.get(f'/api/media/{pending["id"]}/audio').status_code == 409
+    assert client.get('/api/media/missing/audio').status_code == 404
+
+
 def test_restart_marks_unfinished_jobs_and_preserves_completed(tmp_path,monkeypatch):
     from lab.jobs import Jobs
     monkeypatch.setattr(store,'DATA',tmp_path)

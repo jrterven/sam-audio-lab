@@ -79,6 +79,13 @@ de medios/resultados y comprueba que las rutas permanezcan dentro del directorio
 
 ## API local
 
+`GET /api/media/{media_id}/audio` reproduce el audio original completo sin crear
+un recorte ni iniciar inferencia. Convierte el archivo a un MP3 compatible con
+el navegador y lo conserva en `media/{id}/preview.mp3`; admite solicitudes Range
+para buscar posiciones. El archivo subido se conserva intacto. El reproductor
+distingue el tiempo del archivo completo del tiempo relativo de un clip y
+mantiene posición y estado de reproducción al cambiar entre las pistas del resultado.
+
 Con el servidor activo, consulta **http://127.0.0.1:8765/docs** para el contrato
 OpenAPI completo y los esquemas de cada petición.
 

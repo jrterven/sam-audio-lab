@@ -38,6 +38,7 @@ import {
   type Annotation,
 } from "./types";
 import { Timeline } from "./Timeline";
+import { usePlayback } from "./usePlayback";
 
 const initial: Draft = {
   mediaId: "",
@@ -69,8 +70,6 @@ export default function App() {
     [track, setTrack] = useState<"original" | "target" | "residual">(
       "original",
     ),
-    [current, setCurrent] = useState(0),
-    [playing, setPlaying] = useState(false),
     [audio, setAudio] = useState<HTMLAudioElement | null>(null),
     [exportId, setExportId] = useState<string | null>(null);
   const video = useRef<HTMLVideoElement>(null),
@@ -101,17 +100,33 @@ export default function App() {
   const busy = jobs.find((j) => !terminal.has(j.status)),
     runs = jobs.filter(
       (j) => j.operation === "separate" && j.status === "done",
-    ),
-    frame = Math.max(
-      0,
-      Math.min(
-        Math.ceil((draft.end - draft.start) * 25) - 1,
-        Math.floor(current * 25 + 0.001),
-      ),
     );
-  const source = result?.files?.[track] || (clip?.audio ?? ""),
-    url = source ? fileUrl(source) : "",
-    videoUrl = result?.video || clip?.video;
+  const source = result?.files?.[track] || clip?.audio,
+    url = source
+      ? fileUrl(source)
+      : selected?.status === "ready"
+        ? `/api/media/${encodeURIComponent(selected.id)}/audio`
+        : "",
+    videoUrl = result?.video || clip?.video,
+    playbackDuration = clip ? draft.end - draft.start : selected?.duration || 0,
+    playbackScope = clip
+      ? `${draft.mediaId}:${draft.start}:${draft.end}`
+      : `${draft.mediaId}:full`;
+  const { current, playing, loading, seek, play } = usePlayback(
+    audio,
+    video,
+    url,
+    playbackScope,
+    playbackDuration,
+    setError,
+  );
+  const frame = Math.max(
+    0,
+    Math.min(
+      Math.ceil((draft.end - draft.start) * 25) - 1,
+      Math.floor(current * 25 + 0.001),
+    ),
+  );
   const edit = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
   const execute = async (fn: () => Promise<any>) => {
     setError("");
@@ -197,61 +212,6 @@ export default function App() {
   useEffect(() => {
     if (result) setTrack("target");
   }, [draft.resultId, result?.metadata]);
-  useEffect(() => {
-    if (!audio) return;
-    const sync = () => {
-      setCurrent(audio.currentTime);
-      if (
-        video.current &&
-        Math.abs(video.current.currentTime - audio.currentTime) > 0.12
-      )
-        video.current.currentTime = audio.currentTime;
-    };
-    audio.addEventListener("timeupdate", sync);
-    const ended = () => setPlaying(false);
-    audio.addEventListener("ended", ended);
-    return () => {
-      audio.removeEventListener("timeupdate", sync);
-      audio.removeEventListener("ended", ended);
-    };
-  }, [audio]);
-  useEffect(() => {
-    if (!audio || !url) return;
-    const position = audio.currentTime;
-    audio.pause();
-    video.current?.pause();
-    setPlaying(false);
-    const loaded = () => {
-      audio.currentTime = Math.min(position, audio.duration || 0);
-      setCurrent(audio.currentTime);
-      if (video.current) video.current.currentTime = audio.currentTime;
-    };
-    audio.addEventListener("loadedmetadata", loaded, { once: true });
-    audio.src = url;
-    audio.load();
-    return () => audio.removeEventListener("loadedmetadata", loaded);
-  }, [url, audio]);
-  const seek = (t: number) => {
-    if (audio) audio.currentTime = t;
-    if (video.current) video.current.currentTime = t;
-    setCurrent(t);
-  };
-  const play = () =>
-    execute(async () => {
-      if (!audio) return;
-      if (playing) {
-        audio.pause();
-        video.current?.pause();
-        setPlaying(false);
-      } else {
-        await audio.play();
-        if (video.current) {
-          video.current.currentTime = audio.currentTime;
-          await video.current.play();
-        }
-        setPlaying(true);
-      }
-    });
   const chooseMedia = (m: Media) => {
     setDraft({
       ...initial,
@@ -401,7 +361,6 @@ export default function App() {
     });
     setTrack(duplicate ? "original" : "target");
     setDetectionId(null);
-    setCurrent(0);
     if (duplicate)
       execute(async () => {
         const c = await api<Job>("/clips", r);
@@ -569,10 +528,7 @@ export default function App() {
                   {clip ? "Update" : "Prepare clip"}
                 </button>
               </div>
-              <div
-                className="source-overview"
-                title="Total file duration"
-              >
+              <div className="source-overview" title="Total file duration">
                 {(selected.peaks || [])
                   .filter(
                     (_, i) =>
@@ -599,79 +555,88 @@ export default function App() {
                 <span>0:00</span>
                 <span>Full file · {time(selected.duration || 0)}</span>
               </div>
-              <div className={"viewer " + (selected.video ? "" : "audio-only")}>
-                {videoUrl ? (
-                  <div
-                    className={
-                      "video-surface " +
-                      (pointLabel !== null ? "selecting" : "")
-                    }
-                    style={{
-                      aspectRatio: `${videoWidth}/${videoHeight}`,
-                      width: `min(100%, ${(390 * videoWidth) / videoHeight}px)`,
-                    }}
-                    onClick={clickObject}
-                  >
-                    <video
-                      ref={video}
-                      src={fileUrl(videoUrl)}
-                      muted
-                      playsInline
-                      onLoadedMetadata={() => {
-                        if (video.current) video.current.currentTime = current;
+              {(videoUrl || !url) && (
+                <div
+                  className={"viewer " + (selected.video ? "" : "audio-only")}
+                >
+                  {videoUrl ? (
+                    <div
+                      className={
+                        "video-surface " +
+                        (pointLabel !== null ? "selecting" : "")
+                      }
+                      style={{
+                        aspectRatio: `${videoWidth}/${videoHeight}`,
+                        width: `min(100%, ${(390 * videoWidth) / videoHeight}px)`,
                       }}
-                    />
-                    {activeMask && (
-                      <img
-                        className="mask-overlay"
-                        src={activeMask}
-                        alt="Selected object mask"
+                      onClick={clickObject}
+                    >
+                      <video
+                        ref={video}
+                        src={fileUrl(videoUrl)}
+                        muted
+                        playsInline
+                        onLoadedMetadata={() => {
+                          if (video.current)
+                            video.current.currentTime = current;
+                        }}
                       />
-                    )}
-                    {currentPoints.map((p, i) => (
-                      <span
-                        key={i}
-                        className={
-                          "point " + (p.label ? "positive" : "negative")
-                        }
-                        style={{ left: p.x * 100 + "%", top: p.y * 100 + "%" }}
-                      >
-                        {p.label ? "+" : "−"}
+                      {activeMask && (
+                        <img
+                          className="mask-overlay"
+                          src={activeMask}
+                          alt="Selected object mask"
+                        />
+                      )}
+                      {currentPoints.map((p, i) => (
+                        <span
+                          key={i}
+                          className={
+                            "point " + (p.label ? "positive" : "negative")
+                          }
+                          style={{
+                            left: p.x * 100 + "%",
+                            top: p.y * 100 + "%",
+                          }}
+                        >
+                          {p.label ? "+" : "−"}
+                        </span>
+                      ))}
+                      <span className="viewer-tag">
+                        <Film size={12} /> VIDEO · 25 FPS
                       </span>
-                    ))}
-                    <span className="viewer-tag">
-                      <Film size={12} /> VIDEO · 25 FPS
-                    </span>
-                    {pointLabel !== null && (
-                      <span className="click-tip">
-                        Click to {pointLabel ? "include" : "exclude"} ·
-                        frame {frame}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <div className="audio-placeholder">
-                    <AudioLines size={64} strokeWidth={1} />
-                    <p>
-                      {selected.status === "importing"
-                        ? "Analyzing file…"
-                        : ["error", "cancelled", "interrupted"].includes(
-                              selected.status,
-                            )
-                          ? selected.error
-                          : clip
-                            ? "Audio ready"
-                            : "Prepare the clip."}
-                    </p>
-                  </div>
-                )}
-              </div>
-              {(clip || result) && (
+                      {pointLabel !== null && (
+                        <span className="click-tip">
+                          Click to {pointLabel ? "include" : "exclude"} · frame{" "}
+                          {frame}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="audio-placeholder">
+                      <AudioLines size={64} strokeWidth={1} />
+                      <p>
+                        {selected.status === "importing"
+                          ? "Analyzing file…"
+                          : ["error", "cancelled", "interrupted"].includes(
+                                selected.status,
+                              )
+                            ? selected.error
+                            : clip
+                              ? "Audio ready"
+                              : "Prepare the clip."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {!!url && (
                 <>
                   <div className="transport">
                     <button
                       className="play-button"
                       aria-label={playing ? "Pause" : "Play"}
+                      disabled={loading}
                       onClick={play}
                     >
                       {playing ? (
@@ -679,27 +644,23 @@ export default function App() {
                       ) : (
                         <Play size={19} fill="currentColor" />
                       )}
+                      <span>
+                        {loading ? "Loading…" : playing ? "Pause" : "Play"}
+                      </span>
                     </button>
                     <span className="timecode">
-                      {time(current)}{" "}
-                      <span>/ {time(draft.end - draft.start)}</span>
+                      {time(current)} <span>/ {time(playbackDuration)}</span>
+                      <small>{clip ? "Clip" : "Full file"}</small>
                     </span>
-                    <div
-                      className="track-switch"
-                      aria-label="Playback track"
-                    >
+                    <div className="track-switch" aria-label="Playback track">
                       {(["original", "target", "residual"] as const).map(
                         (t) => (
                           <button
                             key={t}
                             disabled={t !== "original" && !result}
                             className={track === t ? "active" : ""}
-                            onClick={() => {
-                              setPlaying(false);
-                              audio?.pause();
-                              video.current?.pause();
-                              setTrack(t);
-                            }}
+                            aria-pressed={track === t}
+                            onClick={() => setTrack(t)}
                           >
                             {t === "original"
                               ? "Original"
@@ -712,46 +673,56 @@ export default function App() {
                     </div>
                     <Volume2 size={16} className="volume-icon" />
                   </div>
-                  <div className="timeline-toolbar">
-                    <span>Regions</span>
-                    <div>
-                      <button
-                        aria-label="Move cursor"
-                        className={tool === null ? "selected" : ""}
-                        onClick={() => setTool(null)}
-                      >
-                        <MousePointer2 size={13} />
-                      </button>
-                      <button
-                        className={tool === "+" ? "selected positive-text" : ""}
-                        onClick={() => setTool(tool === "+" ? null : "+")}
-                      >
-                        <Plus size={14} /> Present
-                      </button>
-                      <button
-                        className={tool === "-" ? "selected negative-text" : ""}
-                        onClick={() => setTool(tool === "-" ? null : "-")}
-                      >
-                        <Minus size={14} /> Absent
-                      </button>
+                  {clip && (
+                    <div className="timeline-toolbar">
+                      <span>Regions</span>
+                      <div>
+                        <button
+                          aria-label="Move cursor"
+                          className={tool === null ? "selected" : ""}
+                          onClick={() => setTool(null)}
+                        >
+                          <MousePointer2 size={13} />
+                        </button>
+                        <button
+                          className={
+                            tool === "+" ? "selected positive-text" : ""
+                          }
+                          onClick={() => setTool(tool === "+" ? null : "+")}
+                        >
+                          <Plus size={14} /> Present
+                        </button>
+                        <button
+                          className={
+                            tool === "-" ? "selected negative-text" : ""
+                          }
+                          onClick={() => setTool(tool === "-" ? null : "-")}
+                        >
+                          <Minus size={14} /> Absent
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <Timeline
-                    key={`${draft.mediaId}:${draft.start}:${draft.end}`}
+                    key={playbackScope}
                     media={audio}
                     url={url}
                     peaks={result?.peaks || clip?.peaks || selected.peaks || []}
-                    duration={draft.end - draft.start}
-                    offset={draft.start}
-                    regions={draft.regions}
-                    tool={tool}
-                    onRegions={(regions) => edit({ regions })}
+                    duration={playbackDuration}
+                    offset={clip ? draft.start : 0}
+                    regions={clip ? draft.regions : []}
+                    tool={clip ? tool : null}
+                    onRegions={(regions) => {
+                      if (clip) edit({ regions });
+                    }}
                     onSeek={seek}
                   />
                   <p className="timeline-help">
-                    {tool
-                      ? "Drag to mark a region."
-                      : "Regions guide separation; they do not trim the clip."}
+                    {!clip
+                      ? "Listen to the full original, or prepare a clip to add regions."
+                      : tool
+                        ? "Drag to mark a region."
+                        : "Regions guide separation; they do not trim the clip."}
                   </p>
                   {!!draft.regions.length && (
                     <div className="region-list">
@@ -1016,7 +987,8 @@ export default function App() {
               draft.annotations.length > 0 &&
               tracking?.status !== "done" && (
                 <p className="field-hint">
-                  Complete tracking or clear the visual selection before separating.
+                  Complete tracking or clear the visual selection before
+                  separating.
                 </p>
               )}
             {busy ? (

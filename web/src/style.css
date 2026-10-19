@@ -510,14 +510,18 @@ p {
   border-bottom: 1px solid var(--border);
 }
 .play-button {
-  width: 36px;
-  height: 36px;
+  min-width: 86px;
+  height: 40px;
+  padding: 0 12px;
   flex-shrink: 0;
-  border-radius: 50%;
+  border-radius: 10px;
   background: var(--accent);
   color: #fff;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 12px;
 }
 .play-button:hover {
   background: var(--accent-dark);
@@ -532,6 +536,13 @@ p {
 }
 .timecode span {
   color: var(--muted);
+}
+.timecode small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 10px;
 }
 .track-switch {
   display: flex;

@@ -15,6 +15,7 @@ from .config import DATA, ROOT, MODELS, VISION_PYTHON
 from . import store
 from .jobs import jobs, TERMINAL
 from .schemas import Recipe, VisionRequest, ExportRequest
+from .media import preview_audio
 
 
 @asynccontextmanager
@@ -71,6 +72,14 @@ def models():
         cached = try_to_load_from_cache(repo, 'checkpoint.pt')
         result.append({'id': name, 'repo': repo, 'cached': isinstance(cached, str) and Path(cached).is_file()})
     return {'audio': result, 'vision_installed': Path(VISION_PYTHON).exists()}
+
+
+@app.get('/api/media/{media_id}/audio')
+def original_audio(media_id: str):
+    media = store.get(media_id, 'media')
+    if media['status'] != 'ready':
+        raise HTTPException(409, 'The file is not ready yet.')
+    return FileResponse(preview_audio(media), media_type='audio/mpeg')
 
 
 @app.post('/api/media')

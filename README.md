@@ -139,6 +139,12 @@ the checkpoint is cached; its encoders may still need to be downloaded.
 4. Switch between **Original**, **Isolated**, and **Residual**, then download a WAV.
 5. Click **Duplicate** in the history and select Base or Large to compare.
 
+**Play** is available as soon as the upload finishes. Before preparing a clip,
+it plays the full original file; the waveform lets you seek through it. After
+preparing a clip or opening a result, playback uses that clip's time range.
+Switching **Original**, **Isolated**, and **Residual** keeps your position and
+continues playback if it was playing. Pressing **Play** at the end starts again.
+
 For temporal prompts, select **Present** or **Absent**, then drag on the waveform.
 Move or resize a region to adjust it, or use its × button to delete it. The
 regions do not change the clip boundaries.

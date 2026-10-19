@@ -1,6 +1,7 @@
 import hashlib
 import json
 import subprocess
+import tempfile
 from pathlib import Path
 import numpy as np
 from .config import DATA, FFMPEG, FFPROBE, FPS
@@ -42,6 +43,25 @@ def peaks(path, duration):
 
 def clip_key(media_id, start, end):
     return hashlib.sha256(f'{media_id}:{start:.6f}:{end:.6f}'.encode()).hexdigest()[:24]
+
+
+def preview_audio(media):
+    """Cache browser-compatible audio for the full file, independently of clips."""
+    directory = DATA / 'media' / media['id']
+    directory.mkdir(parents=True, exist_ok=True)
+    preview = directory / 'preview.mp3'
+    if not preview.exists():
+        # Unique temporary files keep simultaneous requests from sharing a partial encode.
+        with tempfile.NamedTemporaryFile(suffix='.mp3', dir=directory, delete=False) as f:
+            temporary = Path(f.name)
+        try:
+            command([FFMPEG, '-y', '-v', 'error', '-i', str(DATA / media['path']),
+                     '-map', '0:a:0', '-vn', '-c:a', 'libmp3lame', '-q:a', '3',
+                     '-ar', '48000', str(temporary)])
+            temporary.replace(preview)
+        finally:
+            temporary.unlink(missing_ok=True)
+    return preview
 
 
 def prepare_clip(media, start, end, progress=lambda *a: None):
